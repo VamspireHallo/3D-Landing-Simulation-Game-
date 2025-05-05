@@ -1,0 +1,5 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+C:/Users/vamse/GitHub/3D-Landing-Simulation-Game-/bin/3D-Landing-Simulation-Game_debug filter=lfs diff=lfs merge=lfs -text
+C:/Users/vamse/GitHub/3D-Landing-Simulation-Game-/bin/3D-Landing-Simulation-Game_debug,pdb filter=lfs diff=lfs merge=lfs -text
+C:/Users/vamse/GitHub/3D-Landing-Simulation-Game-/bin/3D-Landing-Simulation-Game_debug.pdb filter=lfs diff=lfs merge=lfs -text

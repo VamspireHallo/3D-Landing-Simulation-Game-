@@ -101,16 +101,16 @@ void ofApp::update() {
 	glm::vec3 forwardDir = glm::normalize(glm::vec3(rotationMatrix * glm::vec4(0, 0, -1, 0)));
 	glm::vec3 rightDir = glm::normalize(glm::vec3(rotationMatrix * glm::vec4(1, 0, 0, 0)));
 
-	if (moveForward)  force += forwardDir * movePower;				// Up key
-	if (moveBack)     force -= forwardDir * movePower;				// Down key
-	if (moveLeft)     force -= rightDir * movePower;				// Left Key
-	if (moveRight)    force += rightDir * movePower;				// Right Key
+	if (moveForward) force += forwardDir * movePower;			// Up key
+	if (moveBack) force -= forwardDir * movePower;				// Down key
+	if (moveLeft) force -= rightDir * movePower;				// Left Key
+	if (moveRight) force += rightDir * movePower;				// Right Key
 
 	if (rotateLeft) {
-		landerRotation -= 2.0f;  // A key
+		landerRotation -= 4.0f;  // A key
 	}
 	if (rotateRight) {
-		landerRotation += 2.0f;  // D key
+		landerRotation += 4.0f;  // D key
 	}
 
 	lander.setRotation(0, landerRotation, 0, 1, 0);  // Lander Rotation

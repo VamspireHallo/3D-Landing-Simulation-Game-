@@ -17,14 +17,14 @@
 //--------------------------------------------------------------
 // setup scene, lighting, state and load geometry
 //
-void ofApp::setup(){
+void ofApp::setup() {
 	bWireframe = false;
 	bDisplayPoints = false;
 	bAltKeyDown = false;
 	bCtrlKeyDown = false;
 	bLanderLoaded = false;
 	bTerrainSelected = true;
-//	ofSetWindowShape(1024, 768);
+	//	ofSetWindowShape(1024, 768);
 	cam.setDistance(10);
 	cam.setNearClip(.1);
 	cam.setFov(65.5);   // approx equivalent to 28mm in 35mm format
@@ -39,10 +39,10 @@ void ofApp::setup(){
 
 	// Loading Mars Model
 	//mars.loadModel("geo/mars-low-5x-v2.obj");
-	
+
 	// Loading Moon Model
 	mars.loadModel("geo/moon-houdini.obj");
-	
+
 	mars.setScaleNormalization(false);
 
 	// create sliders for testing
@@ -53,9 +53,9 @@ void ofApp::setup(){
 
 	//  Create Octree for testing.
 	//
-	
+
 	octree.create(mars.getMesh(0), 20);
-	
+
 	cout << "Number of Verts: " << mars.getMesh(0).getNumVertices() << endl;
 
 	testBox = Box(Vector3(3, 3, 0), Vector3(5, 5, 2));
@@ -75,19 +75,52 @@ void ofApp::setup(){
 	levelColors.push_back(ofColor::blue);
 	levelColors.push_back(ofColor::purple);
 	levelColors.push_back(ofColor::magenta);
-	levelColors.push_back(ofColor::crimson);	
+	levelColors.push_back(ofColor::crimson);
 
 
 	gui.setup();
 	gui.add(numLevels.setup("Number of Levels", 1, 1, 10));
 	gui.add(timingToggle.setup("Timing Info", false));
 }
- 
+
 //--------------------------------------------------------------
 // incrementally update scene (animation)
 //
 void ofApp::update() {
 	bTimingInfo = timingToggle;
+
+	if (!bLanderLoaded) return;
+
+	glm::vec3 force(0, 0, 0);
+	float dt = ofGetLastFrameTime();
+
+	if (thrusting) force += glm::vec3(0, 1, 0) * thrustPower;        // W key
+
+	glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(landerRotation), glm::vec3(0, 1, 0));
+
+	glm::vec3 forwardDir = glm::normalize(glm::vec3(rotationMatrix * glm::vec4(0, 0, -1, 0)));
+	glm::vec3 rightDir = glm::normalize(glm::vec3(rotationMatrix * glm::vec4(1, 0, 0, 0)));
+
+	if (moveForward)  force += forwardDir * movePower;				// Up key
+	if (moveBack)     force -= forwardDir * movePower;				// Down key
+	if (moveLeft)     force -= rightDir * movePower;				// Left Key
+	if (moveRight)    force += rightDir * movePower;				// Right Key
+
+	if (rotateLeft) {
+		landerRotation -= 2.0f;  // A key
+	}
+	if (rotateRight) {
+		landerRotation += 2.0f;  // D key
+	}
+
+	lander.setRotation(0, landerRotation, 0, 1, 0);  // Lander Rotation
+
+	velocity += force * dt;
+	velocity *= 0.95f;  // damping
+
+	glm::vec3 pos = lander.getPosition();
+	pos += velocity * dt;
+	lander.setPosition(pos.x, pos.y, pos.z);
 }
 //--------------------------------------------------------------
 void ofApp::draw() {
@@ -130,7 +163,7 @@ void ofApp::draw() {
 			}
 
 			if (bLanderSelected) {
-				
+
 				ofVec3f min = lander.getSceneMin() + lander.getPosition();
 				ofVec3f max = lander.getSceneMax() + lander.getPosition();
 
@@ -167,7 +200,7 @@ void ofApp::draw() {
 	if (bDisplayLeafNodes) {
 		octree.drawLeafNodes(octree.root);
 		cout << "num leaf: " << octree.numLeaf << endl;
-    }
+	}
 	else if (bDisplayOctree) {
 		int colorIndex = numLevels % levelColors.size();
 		ofSetColor(levelColors[colorIndex]);
@@ -230,7 +263,7 @@ void ofApp::drawAxis(ofVec3f location) {
 	// X Axis
 	ofSetColor(ofColor(255, 0, 0));
 	ofDrawLine(ofPoint(0, 0, 0), ofPoint(1, 0, 0));
-	
+
 
 	// Y Axis
 	ofSetColor(ofColor(0, 255, 0));
@@ -287,8 +320,10 @@ void ofApp::keyPressed(int key) {
 		break;
 	case 'V':
 		break;
+	case 'W':
 	case 'w':
-		toggleWireframeMode();
+		//toggleWireframeMode();
+		thrusting = true;
 		break;
 	case OF_KEY_ALT:
 		cam.enableMouseInput();
@@ -301,9 +336,29 @@ void ofApp::keyPressed(int key) {
 		break;
 	case OF_KEY_DEL:
 		break;
+	case 'A':
+	case 'a':
+		rotateLeft = true;
+		break;
+	case 'D':
+	case 'd':
+		rotateRight = true;
+		break;
+	case OF_KEY_LEFT:
+		moveLeft = true;
+		break;
+	case OF_KEY_RIGHT:
+		moveRight = true;
+		break;
+	case OF_KEY_UP:
+		moveForward = true;
+		break;
+	case OF_KEY_DOWN:
+		moveBack = true;
+		break;
 	case ' ':
 		// Collision Resolution if at least 10 collisions
-		if (colBoxList.size() >= 10) {  
+		if (colBoxList.size() >= 10) {
 			bCollisionFix = true;
 			collisionNormal = cam.getZAxis();
 			cout << "Backing up..." << endl;
@@ -329,7 +384,32 @@ void ofApp::togglePointsDisplay() {
 void ofApp::keyReleased(int key) {
 
 	switch (key) {
-	
+	case 'A':
+	case 'a':
+		rotateLeft = false;
+		break;
+	case 'D':
+	case 'd':
+		rotateRight = false;
+		break;
+	case 'W':
+	case 'w':
+		thrusting = false;
+		break;
+	case OF_KEY_LEFT:
+		moveLeft = false;
+		break;
+	case OF_KEY_RIGHT:
+		moveRight = false;
+		break;
+	case OF_KEY_UP:
+		moveForward = false;
+		break;
+	case OF_KEY_DOWN:
+		moveBack = false;
+		break;
+
+
 	case OF_KEY_ALT:
 		cam.disableMouseInput();
 		bAltKeyDown = false;
@@ -348,9 +428,9 @@ void ofApp::keyReleased(int key) {
 
 
 //--------------------------------------------------------------
-void ofApp::mouseMoved(int x, int y ){
+void ofApp::mouseMoved(int x, int y) {
 
-	
+
 }
 
 
@@ -400,7 +480,7 @@ void ofApp::mousePressed(int x, int y, int button) {
 	}
 }
 
-bool ofApp::raySelectWithOctree(ofVec3f &pointRet) {
+bool ofApp::raySelectWithOctree(ofVec3f& pointRet) {
 	ofVec3f mouse(mouseX, mouseY);
 	ofVec3f rayPoint = cam.screenToWorld(mouse);
 	ofVec3f rayDir = rayPoint - cam.getPosition();
@@ -432,7 +512,7 @@ void ofApp::mouseDragged(int x, int y, int button) {
 
 		glm::vec3 mousePos = getMousePointOnPlane(landerPos, cam.getZAxis());
 		glm::vec3 delta = mousePos - mouseLastPos;
-	
+
 		landerPos += delta;
 		lander.setPosition(landerPos.x, landerPos.y, landerPos.z);
 		mouseLastPos = mousePos;
@@ -444,7 +524,7 @@ void ofApp::mouseDragged(int x, int y, int button) {
 
 		colBoxList.clear();
 		octree.intersect(bounds, octree.root, colBoxList);
-		
+
 		// Checking Octree collision
 		collisionDetected = false;
 		for (const auto& colBox : colBoxList) {
@@ -482,22 +562,22 @@ void ofApp::setCameraTarget() {
 
 
 //--------------------------------------------------------------
-void ofApp::mouseEntered(int x, int y){
+void ofApp::mouseEntered(int x, int y) {
 
 }
 
 //--------------------------------------------------------------
-void ofApp::mouseExited(int x, int y){
+void ofApp::mouseExited(int x, int y) {
 
 }
 
 //--------------------------------------------------------------
-void ofApp::windowResized(int w, int h){
+void ofApp::windowResized(int w, int h) {
 
 }
 
 //--------------------------------------------------------------
-void ofApp::gotMessage(ofMessage msg){
+void ofApp::gotMessage(ofMessage msg) {
 
 }
 
@@ -514,7 +594,7 @@ void ofApp::initLightingAndMaterials() {
 	{ 1.0f, 1.0f, 1.0f, 1.0f };
 
 	static float position[] =
-	{5.0, 5.0, 5.0, 0.0 };
+	{ 5.0, 5.0, 5.0, 0.0 };
 
 	static float lmodel_ambient[] =
 	{ 1.0f, 1.0f, 1.0f, 1.0f };
@@ -537,9 +617,9 @@ void ofApp::initLightingAndMaterials() {
 
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
-//	glEnable(GL_LIGHT1);
+	//	glEnable(GL_LIGHT1);
 	glShadeModel(GL_SMOOTH);
-} 
+}
 
 void ofApp::savePicture() {
 	ofImage picture;
@@ -559,8 +639,8 @@ void ofApp::dragEvent2(ofDragInfo dragInfo) {
 	mouseIntersectPlane(ofVec3f(0, 0, 0), cam.getZAxis(), point);
 	if (lander.loadModel(dragInfo.files[0])) {
 		lander.setScaleNormalization(false);
-//		lander.setScale(.1, .1, .1);
-	//	lander.setPosition(point.x, point.y, point.z);
+		//		lander.setScale(.1, .1, .1);
+			//	lander.setPosition(point.x, point.y, point.z);
 		lander.setPosition(1, 1, 0);
 
 		bLanderLoaded = true;
@@ -573,7 +653,7 @@ void ofApp::dragEvent2(ofDragInfo dragInfo) {
 	else cout << "Error: Can't load model" << dragInfo.files[0] << endl;
 }
 
-bool ofApp::mouseIntersectPlane(ofVec3f planePoint, ofVec3f planeNorm, ofVec3f &point) {
+bool ofApp::mouseIntersectPlane(ofVec3f planePoint, ofVec3f planeNorm, ofVec3f& point) {
 	ofVec2f mouse(mouseX, mouseY);
 	ofVec3f rayPoint = cam.screenToWorld(glm::vec3(mouseX, mouseY, 0));
 	ofVec3f rayDir = rayPoint - cam.getPosition();

@@ -36,6 +36,23 @@ void ofApp::setup() {
 	// setup rudimentary lighting 
 	//
 	initLightingAndMaterials();
+	
+	// Load lander model
+	if (lander.loadModel("geo/lander.obj")) {
+		bLanderLoaded = true;
+		lander.setScaleNormalization(false);
+		lander.setPosition(0, 5, 0);  // Adjust initial height if needed
+
+		// Initialize lander bounds
+		ofVec3f min = lander.getSceneMin() + lander.getPosition();
+		ofVec3f max = lander.getSceneMax() + lander.getPosition();
+		landerBounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
+		
+	}
+	else {
+		ofLogError("setup") << "Lander model failed to load!";
+	}
+
 
 	// Loading Mars Model
 	//mars.loadModel("geo/mars-low-5x-v2.obj");

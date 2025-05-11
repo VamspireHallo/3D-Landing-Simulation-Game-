@@ -50,9 +50,8 @@ void ofApp::setup() {
 		
 	}
 	else {
-		ofLogError("setup") << "Lander model failed to load!";
+		ofLogError("setup") << "Spacecraft model failed to load!";
 	}
-
 
 	// Loading Mars Model
 	//mars.loadModel("geo/mars-low-5x-v2.obj");
@@ -94,6 +93,8 @@ void ofApp::setup() {
 	levelColors.push_back(ofColor::magenta);
 	levelColors.push_back(ofColor::crimson);
 
+	// Setting up spacecraft thruster
+	thrusterEmitter = new ParticleSystem();
 
 	gui.setup();
 	gui.add(numLevels.setup("Number of Levels", 1, 1, 10));
@@ -111,8 +112,24 @@ void ofApp::update() {
 	glm::vec3 force(0, 0, 0);
 	float dt = ofGetLastFrameTime();
 
-	if (thrusting) force += glm::vec3(0, 1, 0) * thrustPower;        // W key
+	if (thrusting) {
+		force += glm::vec3(0, 1, 0) * thrustPower;        // W key
 
+		thrusterEmitter->startEmitting();
+
+		glm::vec3 landerPos = lander.getPosition();
+		glm::vec3 backwardDir = lander.getModelMatrix() * glm::vec4(0, -1, 0, 0);  // Local -Y direction
+		glm::vec3 ringPos = landerPos + (backwardDir * 1.0f);  // 5 units behind
+		float ringSpeed = 0.5f;
+		
+		// Emit particles
+		thrusterEmitter->emit(ringPos, backwardDir, ringSpeed);
+	}
+	else {
+		thrusterEmitter->stopEmitting();
+	}
+
+	// Rotation matrix to apply directional forces
 	glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(landerRotation), glm::vec3(0, 1, 0));
 
 	glm::vec3 forwardDir = glm::normalize(glm::vec3(rotationMatrix * glm::vec4(0, 0, -1, 0)));
@@ -123,21 +140,18 @@ void ofApp::update() {
 	if (moveLeft) force -= rightDir * movePower;				// Left Key
 	if (moveRight) force += rightDir * movePower;				// Right Key
 
-	if (rotateLeft) {
-		landerRotation -= 4.0f;  // A key
-	}
-	if (rotateRight) {
-		landerRotation += 4.0f;  // D key
-	}
+	if (rotateLeft) landerRotation -= 4.0f;  // A key
+	if (rotateRight) landerRotation += 4.0f;  // D key
 
 	lander.setRotation(0, landerRotation, 0, 1, 0);  // Lander Rotation
 
 	velocity += force * dt;
 	velocity *= 0.95f;  // damping
-
 	glm::vec3 pos = lander.getPosition();
 	pos += velocity * dt;
 	lander.setPosition(pos.x, pos.y, pos.z);
+
+	thrusterEmitter->update();
 }
 //--------------------------------------------------------------
 void ofApp::draw() {
@@ -166,6 +180,8 @@ void ofApp::draw() {
 		ofMesh mesh;
 		if (bLanderLoaded) {
 			lander.drawFaces();
+			thrusterEmitter->draw();
+
 			if (!bTerrainSelected) drawAxis(lander.getPosition());
 			if (bDisplayBBoxes) {
 				ofNoFill();

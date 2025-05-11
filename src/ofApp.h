@@ -5,7 +5,7 @@
 #include  "ofxAssimpModelLoader.h"
 #include "Octree.h"
 #include <glm/gtx/intersect.hpp>
-
+#include "ParticleSystem.h"
 
 class ofApp : public ofBaseApp {
 
@@ -91,4 +91,6 @@ public:
 	bool thrusting = false;
 	bool moveLeft = false, moveRight = false, moveForward = false, moveBack = false, rotateLeft = false, rotateRight = false;
 
+	// Spacecraft thruster
+	ParticleSystem* thrusterEmitter = NULL; 
 };

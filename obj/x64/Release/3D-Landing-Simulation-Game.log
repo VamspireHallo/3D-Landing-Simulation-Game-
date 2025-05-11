@@ -1,0 +1,43 @@
+﻿  ofApp.cpp
+C:\Users\vamse\Documents\openframeworks\libs\openFrameworks\math\ofMatrix4x4.h(326,20): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+  (compiling source file 'src/ofApp.cpp')
+  
+C:\Users\vamse\Documents\openframeworks\libs\openFrameworks\math\ofMatrix4x4.h(331,20): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+  (compiling source file 'src/ofApp.cpp')
+  
+C:\Users\vamse\Documents\openframeworks\libs\openFrameworks\math\ofMatrix4x4.h(912,11): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+  (compiling source file 'src/ofApp.cpp')
+  
+C:\Users\vamse\Documents\openframeworks\libs\openFrameworks\math\ofMatrix4x4.h(913,11): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+  (compiling source file 'src/ofApp.cpp')
+  
+C:\Users\vamse\Documents\openframeworks\libs\openFrameworks\math\ofMatrix4x4.h(914,11): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+  (compiling source file 'src/ofApp.cpp')
+  
+C:\Users\vamse\Documents\openframeworks\libs\openFrameworks\math\ofMatrix4x4.h(915,11): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+  (compiling source file 'src/ofApp.cpp')
+  
+C:\Users\vamse\Documents\openframeworks\apps\myApps\3D-Landing-Simulation-Game\src\ParticleSystem.h(34,9): warning C4996: 'ofRotateX': Use ofRotateXDeg or ofRotateXRad
+  (compiling source file 'src/ofApp.cpp')
+  
+C:\Users\vamse\Documents\openframeworks\apps\myApps\3D-Landing-Simulation-Game\src\ofApp.cpp(41,13): warning C4996: 'ofxAssimpModelLoader::loadModel': ofxAssimpModelLoader::loadModel() is deprecated, use load() instead.
+C:\Users\vamse\Documents\openframeworks\apps\myApps\3D-Landing-Simulation-Game\src\ofApp.cpp(60,7): warning C4996: 'ofxAssimpModelLoader::loadModel': ofxAssimpModelLoader::loadModel() is deprecated, use load() instead.
+C:\Users\vamse\Documents\openframeworks\apps\myApps\3D-Landing-Simulation-Game\src\ofApp.cpp(189,23): warning C4018: '<': signed/unsigned mismatch
+C:\Users\vamse\Documents\openframeworks\apps\myApps\3D-Landing-Simulation-Game\src\ofApp.cpp(192,6): warning C4996: 'ofRotate': Use ofRotateDeg or ofRotateRad
+C:\Users\vamse\Documents\openframeworks\apps\myApps\3D-Landing-Simulation-Game\src\ofApp.cpp(680,21): warning C4018: '<': signed/unsigned mismatch
+C:\Users\vamse\Documents\openframeworks\apps\myApps\3D-Landing-Simulation-Game\src\ofApp.cpp(673,13): warning C4996: 'ofxAssimpModelLoader::loadModel': ofxAssimpModelLoader::loadModel() is deprecated, use load() instead.
+C:\Users\vamse\Documents\openframeworks\apps\myApps\3D-Landing-Simulation-Game\src\ofApp.cpp(709,21): warning C4018: '<': signed/unsigned mismatch
+C:\Users\vamse\Documents\openframeworks\apps\myApps\3D-Landing-Simulation-Game\src\ofApp.cpp(703,13): warning C4996: 'ofxAssimpModelLoader::loadModel': ofxAssimpModelLoader::loadModel() is deprecated, use load() instead.
+  LINK : /LTCG specified but no code generation required; remove /LTCG from the link command line to improve linker performance
+pugixml.lib(pugixml.obj) : warning LNK4006: "public: __cdecl pugi::xpath_node::xpath_node(void)" (??0xpath_node@pugi@@QEAA@XZ) already defined in assimp64.lib(ImporterRegistry.obj); second definition ignored
+pugixml.lib(pugixml.obj) : warning LNK4006: "private: void __cdecl pugi::xml_document::_destroy(void)" (?_destroy@xml_document@pugi@@AEAAXXZ) already defined in assimp64.lib(AMFImporter.obj); second definition ignored
+pugixml.lib(pugixml.obj) : warning LNK4006: "public: char const * __cdecl pugi::xml_node::name(void)const " (?name@xml_node@pugi@@QEBAPEBDXZ) already defined in assimp64.lib(AMFImporter.obj); second definition ignored
+bin\3D-Landing-Simulation-Game.exe : warning LNK4088: image being generated due to /FORCE option; image may not run
+  3D-Landing-Simulation-Game.vcxproj -> C:\Users\vamse\Documents\openframeworks\apps\myApps\3D-Landing-Simulation-Game\bin\3D-Landing-Simulation-Game.exe
+  
+  	                   2	C:\Users\vamse\Documents\openframeworks\libs\fmod\lib\vs\x64\
+  	  *EXTRA File 		 6942208	C:\Users\vamse\Documents\openframeworks\apps\myApps\3D-Landing-Simulation-Game\bin\FreeImage.dll
+  
+  	                   1	C:\Users\vamse\Documents\openframeworks\libs\FreeImage\lib\vs\x64\
+  	  *EXTRA File 		 1826304	C:\Users\vamse\Documents\openframeworks\apps\myApps\3D-Landing-Simulation-Game\bin\fmod.dll
+  	  *EXTRA File 		 2041856	C:\Users\vamse\Documents\openframeworks\apps\myApps\3D-Landing-Simulation-Game\bin\fmodL.dll

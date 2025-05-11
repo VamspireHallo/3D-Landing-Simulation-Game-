@@ -1,0 +1,27 @@
+newmtl blinn1SG
+illum 4
+Kd 0.00 0.01 0.06
+Ka 0.18 0.00 0.50
+Tf 0.98 0.98 0.98
+Ni 1.00
+Ks 0.50 0.50 0.50
+newmtl lambert2SG
+illum 4
+Kd 0.09 0.13 0.46
+Ka 0.06 0.03 0.14
+Tf 1.00 1.00 1.00
+Ni 1.00
+newmtl lambert3SG
+illum 4
+Kd 0.14 0.04 0.12
+Ka 0.06 0.10 0.20
+Tf 1.00 1.00 1.00
+Ni 1.00
+newmtl phong1SG
+illum 4
+Kd 0.14 0.17 0.18
+Ka 0.62 0.88 1.00
+Tf 1.00 1.00 1.00
+Ni 1.00
+Ks 0.50 0.50 0.50
+Ns 18.00

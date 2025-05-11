@@ -38,7 +38,7 @@ void ofApp::setup() {
 	initLightingAndMaterials();
 	
 	// Load lander model
-	if (lander.loadModel("geo/lander.obj")) {
+	if (lander.loadModel("3DModels/Spacecraft.obj")) {
 		bLanderLoaded = true;
 		lander.setScaleNormalization(false);
 		lander.setPosition(0, 5, 0);  // Adjust initial height if needed

@@ -41,7 +41,8 @@ void ofApp::setup() {
 	if (lander.loadModel("3DModels/Spacecraft.obj")) {
 		bLanderLoaded = true;
 		lander.setScaleNormalization(false);
-		lander.setPosition(0, 5, 0);  // Adjust initial height if needed
+		landerStartPosition = glm::vec3(0, 5, 0);
+		lander.setPosition(landerStartPosition.x, landerStartPosition.y, landerStartPosition.z);
 
 		// Initialize lander bounds
 		ofVec3f min = lander.getSceneMin() + lander.getPosition();
@@ -114,6 +115,17 @@ void ofApp::update() {
 
 	glm::vec3 force(0, 0, 0);
 	float dt = ofGetLastFrameTime();
+
+	if (bExploding) {
+		if (ofGetElapsedTimef() - explosionStartTime > explosionDuration) {
+			bExploding = false;
+			velocity = glm::vec3(0);
+			lander.setPosition(landerStartPosition.x, landerStartPosition.y, landerStartPosition.z);
+			landerRotation = 0;
+			lander.setRotation(0, landerRotation, 0, 1, 0);
+		}
+		return;  // skip physics updates during explosion
+	}
 
 	if (thrusting) {
 		force += glm::vec3(0, thrustPower, 0);        // W key
@@ -208,8 +220,9 @@ void ofApp::draw() {
 		mars.drawFaces();
 		ofMesh mesh;
 		if (bLanderLoaded) {
-			lander.drawFaces();
-			thrusterEmitter->draw();
+			if (!bExploding) {
+				lander.drawFaces();
+			}
 
 			if (!bTerrainSelected) drawAxis(lander.getPosition());
 			if (bDisplayBBoxes) {
@@ -405,6 +418,10 @@ void ofApp::keyPressed(int key) {
 	case 'D':
 	case 'd':
 		rotateRight = true;
+		break;
+	case 'E':
+	case 'e':  // Trigger explosion
+
 		break;
 	case 'G':
 	case 'g':

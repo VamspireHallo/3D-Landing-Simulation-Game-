@@ -91,9 +91,14 @@ public:
 	bool thrusting = false;
 	bool moveLeft = false, moveRight = false, moveForward = false, moveBack = false, rotateLeft = false, rotateRight = false;
 	bool bGravityEnabled = false;
-	//glm::vec3 gravity= glm::vec3(0, -1.62, 0);  // Moon gravity
 	float gravity;
 
 	// Spacecraft thruster
 	ParticleSystem* thrusterEmitter = NULL; 
+
+	// Explosion state
+	bool bExploding = false;
+	float explosionStartTime = 0.0f;
+	float explosionDuration = 2.0f;  // seconds
+	glm::vec3 landerStartPosition = glm::vec3(0, 5, 0);
 };

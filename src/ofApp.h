@@ -5,7 +5,7 @@
 #include  "ofxAssimpModelLoader.h"
 #include "Octree.h"
 #include <glm/gtx/intersect.hpp>
-#include "ParticleSystem.h"
+#include "ParticleEmitter.h"
 
 class ofApp : public ofBaseApp {
 
@@ -90,6 +90,9 @@ public:
 	float landerRotation = 0.0f;
 	bool thrusting = false;
 	bool moveLeft = false, moveRight = false, moveForward = false, moveBack = false, rotateLeft = false, rotateRight = false;
+	bool bGravityEnabled = false;
+	//glm::vec3 gravity= glm::vec3(0, -1.62, 0);  // Moon gravity
+	float gravity;
 
 	// Spacecraft thruster
 	ParticleSystem* thrusterEmitter = NULL; 

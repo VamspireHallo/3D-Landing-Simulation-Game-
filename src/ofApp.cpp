@@ -96,6 +96,9 @@ void ofApp::setup() {
 	// Setting up spacecraft thruster
 	thrusterEmitter = new ParticleSystem();
 
+	// Setting Moon gravity
+	gravity = -1.62f;
+
 	gui.setup();
 	gui.add(numLevels.setup("Number of Levels", 1, 1, 10));
 	gui.add(timingToggle.setup("Timing Info", false));
@@ -113,7 +116,7 @@ void ofApp::update() {
 	float dt = ofGetLastFrameTime();
 
 	if (thrusting) {
-		force += glm::vec3(0, 1, 0) * thrustPower;        // W key
+		force += glm::vec3(0, thrustPower, 0);        // W key
 
 		thrusterEmitter->startEmitting();
 
@@ -140,18 +143,44 @@ void ofApp::update() {
 	if (moveLeft) force -= rightDir * movePower;				// Left Key
 	if (moveRight) force += rightDir * movePower;				// Right Key
 
-	if (rotateLeft) landerRotation -= 4.0f;  // A key
-	if (rotateRight) landerRotation += 4.0f;  // D key
+	if (rotateLeft) landerRotation -= 4.0f;		// A key
+	if (rotateRight) landerRotation += 4.0f;	// D key
 
 	lander.setRotation(0, landerRotation, 0, 1, 0);  // Lander Rotation
 
+	if (bGravityEnabled && !collisionDetected) {
+		force += glm::vec3(0, gravity, 0);
+	}
+
 	velocity += force * dt;
-	velocity *= 0.95f;  // damping
+
+	//Slow down lander when colliding
+	if (collisionDetected && velocity.y < 0.1f) {
+		velocity.y *= 0.2f;
+	}
+
 	glm::vec3 pos = lander.getPosition();
 	pos += velocity * dt;
 	lander.setPosition(pos.x, pos.y, pos.z);
 
 	thrusterEmitter->update();
+
+	ofVec3f min = lander.getSceneMin() + lander.getPosition();
+	ofVec3f max = lander.getSceneMax() + lander.getPosition();
+
+	Box bounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
+
+	colBoxList.clear();
+	octree.intersect(bounds, octree.root, colBoxList);
+
+	// Checking Octree collision
+	collisionDetected = false;
+	for (const auto& colBox : colBoxList) {
+		if (bounds.overlap(colBox)) {
+			collisionDetected = true;
+			break; // Exit loop once a collision is detected
+		}
+	}
 }
 //--------------------------------------------------------------
 void ofApp::draw() {
@@ -377,6 +406,11 @@ void ofApp::keyPressed(int key) {
 	case 'd':
 		rotateRight = true;
 		break;
+	case 'G':
+	case 'g':
+		bGravityEnabled = !bGravityEnabled;
+		break;
+
 	case OF_KEY_LEFT:
 		moveLeft = true;
 		break;

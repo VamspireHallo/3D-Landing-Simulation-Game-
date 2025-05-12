@@ -10,7 +10,6 @@ public:
         velocity = startVelocity;
         rot = startRotation;
         scale = glm::vec3(startScale);
-        color = ofColor(255, 80, 0);
         alpha = 255.0f;
     }
 
@@ -25,7 +24,7 @@ public:
         if (alpha <= 0) return;
 
         ofPushStyle();
-        ofSetColor(color.r, color.g, color.b, alpha);  // Fading orange
+        ofSetColor(255, 80, 0, alpha);  // Fading orange
         ofNoFill();
 
         ofPushMatrix();
@@ -64,7 +63,6 @@ public:
 
     glm::vec3 velocity;
     float alpha;
-    ofColor color;
 };
 
 
@@ -103,7 +101,6 @@ public:
     void startEmitting() {
         isEmitting = true;
     }
-
 
 private:
     std::vector<Emitter> rings;

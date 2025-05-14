@@ -100,6 +100,9 @@ void ofApp::setup() {
 	// Setting Moon gravity
 	gravity = -1.62f;
 
+	bTelemetryEnabled = false;  // Initially, telemetry is turned off
+	altitudeAGL = 0.0f;
+
 	gui.setup();
 	gui.add(numLevels.setup("Number of Levels", 1, 1, 10));
 	gui.add(timingToggle.setup("Timing Info", false));
@@ -214,7 +217,35 @@ void ofApp::update() {
 			collisionDetected = false;  // Reset collision state
 		}
 	}
+
+	if (bTelemetryEnabled) {
+		// Cast ray straight down from lander
+		glm::vec3 landerPos = lander.getPosition();
+		glm::vec3 rayDir = glm::vec3(0, -1, 0); // Downward direction
+
+		Ray downRay = Ray(Vector3(landerPos.x, landerPos.y, landerPos.z),
+			Vector3(rayDir.x, rayDir.y, rayDir.z));
+
+		TreeNode telemetryNode;
+		bool hit = octree.intersect(downRay, octree.root, telemetryNode);
+
+		if (hit && !telemetryNode.points.empty()) {
+			glm::vec3 contactPoint = octree.mesh.getVertex(telemetryNode.points[0]);
+			float distanceToSurface = glm::distance(landerPos, contactPoint);
+
+			// Log telemetry information
+			cout << fixed << setprecision(2);
+			cout << "[TELEMETRY] Lander Pos: (" << landerPos.x << ", " << landerPos.y << ", " << landerPos.z << ") | "
+				<< "Contact Point: (" << contactPoint.x << ", " << contactPoint.y << ", " << contactPoint.z << ") | "
+				<< "Distance: " << distanceToSurface << " units" << endl;
+			altitudeAGL = distanceToSurface;
+		}
+		else {
+			cout << "[TELEMETRY] No terrain detected directly beneath the lander." << endl;
+		}
+	}
 }
+
 //--------------------------------------------------------------
 void ofApp::draw() {
 
@@ -347,6 +378,14 @@ void ofApp::draw() {
 
 	ofPopMatrix();
 	cam.end();
+
+	if (bTelemetryEnabled) {
+		ofSetColor(255);
+		string aglText = "AGL: " + ofToString(altitudeAGL, 2) + " m";
+		int textWidth = aglText.length() * 8;  // estimate based on fixed-width font
+		int x = ofGetWidth() - textWidth - 20;
+		ofDrawBitmapString(aglText, x, 40);
+	}
 }
 
 
@@ -453,7 +492,10 @@ void ofApp::keyPressed(int key) {
 	case 'g':
 		bGravityEnabled = !bGravityEnabled;
 		break;
-
+	case 'Z':
+	case 'z':
+		bTelemetryEnabled = !bTelemetryEnabled;
+		break;
 	case OF_KEY_LEFT:
 		moveLeft = true;
 		break;
@@ -856,3 +898,6 @@ glm::vec3 ofApp::getMousePointOnPlane(glm::vec3 planePt, glm::vec3 planeNorm) {
 	}
 	else return glm::vec3(0, 0, 0);
 }
+
+
+

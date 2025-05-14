@@ -93,6 +93,7 @@ public:
 	bool moveLeft = false, moveRight = false, moveForward = false, moveBack = false, rotateLeft = false, rotateRight = false;
 	bool bGravityEnabled = true;
 	float gravity;
+	bool bShowAltitude = false;
 
 	// Spacecraft thruster
 	ParticleSystem* thrusterEmitter = NULL; 
@@ -105,4 +106,10 @@ public:
 
 	// shaders (Implement later)
 	ofShader shader;
+
+	// Altitude Sensor
+	bool bTelemetryEnabled;
+	float altitudeAGL;      
+	const float rayDistance = 1000.0f;
+
 };

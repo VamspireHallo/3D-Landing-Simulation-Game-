@@ -91,7 +91,7 @@ public:
 	float landerRotation = 0.0f;
 	bool thrusting = false;
 	bool moveLeft = false, moveRight = false, moveForward = false, moveBack = false, rotateLeft = false, rotateRight = false;
-	bool bGravityEnabled = true;
+	bool bGravityEnabled = false;
 	float gravity;
 	bool bShowAltitude = false;
 

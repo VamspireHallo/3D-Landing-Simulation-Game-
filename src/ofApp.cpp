@@ -36,12 +36,12 @@ void ofApp::setup() {
 	// setup rudimentary lighting 
 	//
 	initLightingAndMaterials();
-	
+
 	// Load lander model
 	if (lander.loadModel("3DModels/Spacecraft.obj")) {
 		bLanderLoaded = true;
 		lander.setScaleNormalization(false);
-		lander.setPosition(0, 5, 0);  // Adjust initial height if needed
+		lander.setPosition(0, 10, 0);  // Adjust initial height if needed
 
 		// Initialize lander bounds
 		ofVec3f min = lander.getSceneMin() + lander.getPosition();
@@ -166,6 +166,17 @@ void ofApp::update() {
 	glm::vec3 pos = lander.getPosition();
 	pos += velocity * dt;
 	lander.setPosition(pos.x, pos.y, pos.z);
+
+	if (lander.getPosition().y < 0) {
+		// Reset lander
+		lander.setPosition(0, 5, 0);
+		velocity = glm::vec3(0, 0, 0);
+		landerRotation = 0;
+		lander.setRotation(0, landerRotation, 0, 1, 0);
+
+		collisionDetected = false;
+		bExploding = false;
+	}
 
 	thrusterEmitter->update();
 
@@ -480,8 +491,12 @@ void ofApp::keyPressed(int key) {
 		break;
 	case 'E':
 	case 'e':
-		explosionEmitter.setPosition(lander.getPosition());
-		explosionEmitter.triggerExplosion();
+		if (!bExploding) {
+			explosionEmitter.setPosition(lander.getPosition());
+			explosionEmitter.triggerExplosion();
+			explosionStartTime = ofGetElapsedTimef();
+			lander.setPosition(0, 5, 0);
+		}
 		break;
 	case 'G':
 	case 'g':

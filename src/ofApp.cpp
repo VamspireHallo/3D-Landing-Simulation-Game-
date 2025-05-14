@@ -47,7 +47,6 @@ void ofApp::setup() {
 		ofVec3f min = lander.getSceneMin() + lander.getPosition();
 		ofVec3f max = lander.getSceneMax() + lander.getPosition();
 		landerBounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
-		
 	}
 	else {
 		ofLogError("setup") << "Spacecraft model failed to load!";
@@ -95,6 +94,8 @@ void ofApp::setup() {
 
 	// Setting up spacecraft thruster
 	thrusterEmitter = new ParticleSystem();
+
+	explosionEmitter.setup(ofVec3f(0, 0, 0));
 
 	// Setting Moon gravity
 	gravity = -1.62f;
@@ -165,6 +166,8 @@ void ofApp::update() {
 
 	thrusterEmitter->update();
 
+	explosionEmitter.update();
+
 	ofVec3f min = lander.getSceneMin() + lander.getPosition();
 	ofVec3f max = lander.getSceneMax() + lander.getPosition();
 
@@ -174,11 +177,41 @@ void ofApp::update() {
 	octree.intersect(bounds, octree.root, colBoxList);
 
 	// Checking Octree collision
+	bool wasInCollision = collisionDetected;
 	collisionDetected = false;
+
 	for (const auto& colBox : colBoxList) {
 		if (bounds.overlap(colBox)) {
 			collisionDetected = true;
-			break; // Exit loop once a collision is detected
+
+			// Only trigger explosion if it's a new collision
+			if (!wasInCollision && !explosionEmitter.isInProgress()) {
+				ofVec3f landerPos = lander.getPosition();
+
+				// Start explosion at the lander's position
+				explosionEmitter.setPosition(landerPos);
+				explosionEmitter.triggerExplosion();
+
+				// Set explosion start time
+				explosionStartTime = ofGetElapsedTimef();
+				bExploding = true;  // Start explosion timer
+			}
+
+			break;
+		}
+	}
+
+	// Handle explosion timer and respawn logic
+	if (bExploding) {
+		if (ofGetElapsedTimef() - explosionStartTime >= respawnDelay) {
+			// Respawn lander after 3 seconds
+			lander.setPosition(0, 5, 0);           // Reset to initial position
+			velocity = glm::vec3(0, 0, 0);         // Reset velocity
+			landerRotation = 0;                    // Reset rotation
+			lander.setRotation(0, landerRotation, 0, 1, 0);
+
+			bExploding = false;  // Stop explosion timer
+			collisionDetected = false;  // Reset collision state
 		}
 	}
 }
@@ -197,7 +230,7 @@ void ofApp::draw() {
 		ofDisableLighting();
 		ofSetColor(ofColor::slateGray);
 		mars.drawWireframe();
-		if (bLanderLoaded) {
+		if (!bExploding && bLanderLoaded) {
 			lander.drawWireframe();
 			if (!bTerrainSelected) drawAxis(lander.getPosition());
 		}
@@ -206,8 +239,9 @@ void ofApp::draw() {
 	else {
 		ofEnableLighting();              // shaded mode
 		mars.drawFaces();
+
 		ofMesh mesh;
-		if (bLanderLoaded) {
+		if (bLanderLoaded && !bExploding) {
 			lander.drawFaces();
 			thrusterEmitter->draw();
 
@@ -305,6 +339,10 @@ void ofApp::draw() {
 			cout << "Collision resolved!" << endl;
 			bCollisionFix = false;  // stop backing up
 		}
+	}
+
+	if (explosionEmitter.isInProgress()) {
+		explosionEmitter.draw();  // Render the explosion particles
 	}
 
 	ofPopMatrix();
@@ -405,6 +443,11 @@ void ofApp::keyPressed(int key) {
 	case 'D':
 	case 'd':
 		rotateRight = true;
+		break;
+	case 'E':
+	case 'e':
+		explosionEmitter.setPosition(lander.getPosition());
+		explosionEmitter.triggerExplosion();
 		break;
 	case 'G':
 	case 'g':

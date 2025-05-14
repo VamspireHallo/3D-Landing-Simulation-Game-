@@ -6,6 +6,7 @@
 #include "Octree.h"
 #include <glm/gtx/intersect.hpp>
 #include "ParticleEmitter.h"
+#include "ExplosionEmitter.h"
 
 class ofApp : public ofBaseApp {
 
@@ -90,15 +91,18 @@ public:
 	float landerRotation = 0.0f;
 	bool thrusting = false;
 	bool moveLeft = false, moveRight = false, moveForward = false, moveBack = false, rotateLeft = false, rotateRight = false;
-	bool bGravityEnabled = false;
+	bool bGravityEnabled = true;
 	float gravity;
 
 	// Spacecraft thruster
 	ParticleSystem* thrusterEmitter = NULL; 
 
 	// Explosion state
-	bool bExploding = false;
-	float explosionStartTime = 0.0f;
-	float explosionDuration = 2.0f;  // seconds
-	glm::vec3 landerStartPosition = glm::vec3(0, 5, 0);
+	ExplosionEmitter explosionEmitter;
+	bool bExploding = false;         // is explosion in progress
+	float explosionStartTime = 0.0f; // when the explosion started
+	float respawnDelay = 30.0f;       // 3 second respawn delay
+
+	// shaders (Implement later)
+	ofShader shader;
 };

@@ -233,11 +233,6 @@ void ofApp::update() {
 			glm::vec3 contactPoint = octree.mesh.getVertex(telemetryNode.points[0]);
 			float distanceToSurface = glm::distance(landerPos, contactPoint);
 
-			// Log telemetry information
-			cout << fixed << setprecision(2);
-			cout << "[TELEMETRY] Lander Pos: (" << landerPos.x << ", " << landerPos.y << ", " << landerPos.z << ") | "
-				<< "Contact Point: (" << contactPoint.x << ", " << contactPoint.y << ", " << contactPoint.z << ") | "
-				<< "Distance: " << distanceToSurface << " units" << endl;
 			altitudeAGL = distanceToSurface;
 		}
 		else {

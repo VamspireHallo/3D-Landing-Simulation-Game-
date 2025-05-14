@@ -41,7 +41,7 @@ void ofApp::setup() {
 	if (lander.loadModel("3DModels/Spacecraft.obj")) {
 		bLanderLoaded = true;
 		lander.setScaleNormalization(false);
-		lander.setPosition(0, 10, 0);  // Adjust initial height if needed
+		lander.setPosition(0, 5, 0);  // Adjust initial height if needed
 
 		// Initialize lander bounds
 		ofVec3f min = lander.getSceneMin() + lander.getPosition();
@@ -103,6 +103,9 @@ void ofApp::setup() {
 	bTelemetryEnabled = false;  // Initially, telemetry is turned off
 	altitudeAGL = 0.0f;
 
+	fuelTimeRemaining = 120.0f; 
+	bFuelEmpty = false;
+
 	gui.setup();
 	gui.add(numLevels.setup("Number of Levels", 1, 1, 10));
 	gui.add(timingToggle.setup("Timing Info", false));
@@ -119,17 +122,27 @@ void ofApp::update() {
 	glm::vec3 force(0, 0, 0);
 	float dt = ofGetLastFrameTime();
 
-	if (thrusting) {
-		force += glm::vec3(0, thrustPower, 0);        // W key
+	// Fuel System Timer
+	if (fuelTimeRemaining > 0.0f) {
+		fuelTimeRemaining -= dt;
+		if (fuelTimeRemaining <= 0.0f) {
+			fuelTimeRemaining = 0.0f;
+			bFuelEmpty = true;
+			thrusting = false;
+		}
+	}
+
+	// Thruster Emitter
+	if (thrusting && !bFuelEmpty) {
+		force += glm::vec3(0, thrustPower, 0);  // Apply upward force
 
 		thrusterEmitter->startEmitting();
 
 		glm::vec3 landerPos = lander.getPosition();
 		glm::vec3 backwardDir = lander.getModelMatrix() * glm::vec4(0, -1, 0, 0);  // Local -Y direction
-		glm::vec3 ringPos = landerPos + (backwardDir * 1.0f);  // 5 units behind
+		glm::vec3 ringPos = landerPos + (backwardDir * 1.0f);
 		float ringSpeed = 0.5f;
-		
-		// Emit particles
+
 		thrusterEmitter->emit(ringPos, backwardDir, ringSpeed);
 	}
 	else {
@@ -223,7 +236,6 @@ void ofApp::update() {
 			velocity = glm::vec3(0, 0, 0);         // Reset velocity
 			landerRotation = 0;                    // Reset rotation
 			lander.setRotation(0, landerRotation, 0, 1, 0);
-
 			bExploding = false;  // Stop explosion timer
 			collisionDetected = false;  // Reset collision state
 		}
@@ -385,12 +397,28 @@ void ofApp::draw() {
 	ofPopMatrix();
 	cam.end();
 
+	ofSetColor(255);
+	std::stringstream ss;
+	ss << "Fuel Time Remaining: " << std::fixed << std::setprecision(1) << fuelTimeRemaining << " s";
+	string timerText = ss.str();
+	int textWidth = timerText.length() * 8;
+	int x = ofGetWidth() - textWidth - 20;
+	ofDrawBitmapString(timerText, x, 30);
+
+	std::stringstream vs;
+	vs << "Velocity: ("
+		<< std::fixed << std::setprecision(2)
+		<< velocity.x << ", " << velocity.y << ", " << velocity.z << ") m/s";
+	string velocityText = vs.str();
+	int velocityWidth = velocityText.length() * 8;
+	int vx = ofGetWidth() - velocityWidth - 20;
+	ofDrawBitmapString(velocityText, vx, 50);
+
 	if (bTelemetryEnabled) {
-		ofSetColor(255);
-		string aglText = "AGL: " + ofToString(altitudeAGL, 2) + " m";
-		int textWidth = aglText.length() * 8;  // estimate based on fixed-width font
+		string aglText = "Altitude AGL Sensor: " + ofToString(altitudeAGL, 2) + " m";
+		int textWidth = aglText.length() * 8;
 		int x = ofGetWidth() - textWidth - 20;
-		ofDrawBitmapString(aglText, x, 40);
+		ofDrawBitmapString(aglText, x, 70);
 	}
 }
 
@@ -468,7 +496,9 @@ void ofApp::keyPressed(int key) {
 	case 'W':
 	case 'w':
 		//toggleWireframeMode();
-		thrusting = true;
+		if (!bFuelEmpty) {
+			thrusting = true;
+		}
 		break;
 	case OF_KEY_ALT:
 		cam.enableMouseInput();

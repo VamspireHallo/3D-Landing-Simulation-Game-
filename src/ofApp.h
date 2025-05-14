@@ -85,8 +85,8 @@ public:
 	bool bTimingInfo = false;
 
 	// Spacecraft
-	glm::vec3 velocity;   // lander velocity
-	float thrustPower = 5.0f;  // can tweak this
+	glm::vec3 velocity;
+	float thrustPower = 5.0f;
 	float movePower = 2.0f;
 	float landerRotation = 0.0f;
 	bool thrusting = false;
@@ -100,9 +100,13 @@ public:
 
 	// Explosion state
 	ExplosionEmitter explosionEmitter;
-	bool bExploding = false;         // is explosion in progress
-	float explosionStartTime = 0.0f; // when the explosion started
-	float respawnDelay = 30.0f;       // 3 second respawn delay
+	bool bExploding = false;
+	float explosionStartTime = 0.0f;
+	float respawnDelay = 3.0f;			// 3 second respawn delay
+
+	// Fuel system
+	float fuelTimeRemaining = 120.0f;  // 2 minutes = 120 seconds
+	bool bFuelEmpty = false;
 
 	// shaders (Implement later)
 	ofShader shader;

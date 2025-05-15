@@ -27,8 +27,8 @@ void ofApp::setup() {
 	//	ofSetWindowShape(1024, 768);
 	cam.setDistance(10);
 	cam.setNearClip(.1);
-	cam.setFov(65.5);   // approx equivalent to 28mm in 35mm format
-	cam.setPosition(0, 500, 450);
+	cam.setFov(50);  
+	cam.setPosition(0, 1000, 3000);
 	ofSetVerticalSync(true);
 	cam.disableMouseInput();
 	ofEnableSmoothing();
@@ -38,20 +38,11 @@ void ofApp::setup() {
 	//
 	initLightingAndMaterials();
 
-	// Loading Mars Model
-	//mars.loadModel("geo/mars-low-5x-v2.obj");
-
-	// Loading Moon Model
-	//mars.loadModel("geo/moon-houdini.obj");
-	mars.loadModel("3DModels/Map.obj");
-
-	mars.setScaleNormalization(false);
-
 	// Load lander model
 	if (lander.loadModel("3DModels/Spacecraft.obj")) {
 		bLanderLoaded = true;
 		lander.setScaleNormalization(false);
-		lander.setPosition(0, 500, 400);  // Adjust initial height if needed
+		lander.setPosition(0, 1000, 2500);  // Adjust initial height if needed
 
 		// Initialize lander bounds
 		ofVec3f min = lander.getSceneMin() + lander.getPosition();
@@ -61,6 +52,12 @@ void ofApp::setup() {
 	else {
 		ofLogError("setup") << "Spacecraft model failed to load!";
 	}
+
+	// Loading Terrain Model
+	mars.loadModel("3DModels/TerrainMap.obj");
+	//mars.loadModel("3DModels/Map.obj");
+
+	mars.setScaleNormalization(false);
 
 	// create sliders for testing
 	//
@@ -184,7 +181,7 @@ void ofApp::update() {
 
 	if (lander.getPosition().y < 0) {
 		// Reset lander
-		lander.setPosition(0, 500, 400);
+		lander.setPosition(0, 1000, 2500);
 		velocity = glm::vec3(0, 0, 0);
 		landerRotation = 0;
 		lander.setRotation(0, landerRotation, 0, 1, 0);
@@ -234,7 +231,7 @@ void ofApp::update() {
 	if (bExploding) {
 		if (ofGetElapsedTimef() - explosionStartTime >= respawnDelay) {
 			// Respawn lander after 3 seconds
-			lander.setPosition(0, 500, 400);         // Reset to initial position
+			lander.setPosition(0, 1000, 2500);         // Reset to initial position
 			velocity = glm::vec3(0, 0, 0);         // Reset velocity
 			landerRotation = 0;                    // Reset rotation
 			lander.setRotation(0, landerRotation, 0, 1, 0);
@@ -527,7 +524,7 @@ void ofApp::keyPressed(int key) {
 			explosionEmitter.setPosition(lander.getPosition());
 			explosionEmitter.triggerExplosion();
 			explosionStartTime = ofGetElapsedTimef();
-			lander.setPosition(0, 500, 400);
+			lander.setPosition(0, 1000, 2500);
 		}
 		break;
 	case 'G':

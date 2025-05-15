@@ -5,7 +5,7 @@
 
 class Emitter : public Shape {
 public:
-    Emitter(glm::vec3 startPos, glm::vec3 startVelocity, float startRotation = 0.0f, ofColor c = ofColor(255, 140, 0), float startScale = 0.8f) {
+    Emitter(glm::vec3 startPos, glm::vec3 startVelocity, float startRotation = 0.0f, ofColor c = ofColor(255, 140, 0), float startScale = 1.5f) {
         pos = startPos;
         velocity = startVelocity;
         rot = startRotation;

@@ -104,6 +104,7 @@ void ofApp::setup() {
 
 	fuelTimeRemaining = 120.0f; 
 	bFuelEmpty = false;
+	explosionDuration = 3.0f;
 
 	gui.setup();
 	gui.add(numLevels.setup("Number of Levels", 1, 1, 10));
@@ -139,8 +140,8 @@ void ofApp::update() {
 
 		glm::vec3 landerPos = lander.getPosition();
 		glm::vec3 backwardDir = lander.getModelMatrix() * glm::vec4(0, -1, 0, 0);  // Local -Y direction
-		glm::vec3 ringPos = landerPos + (backwardDir * 1.0f);
-		float ringSpeed = 0.5f;
+		glm::vec3 ringPos = landerPos + (backwardDir * 4.0f);
+		float ringSpeed = 1.0f;
 
 		thrusterEmitter->emit(ringPos, backwardDir, ringSpeed);
 	}
@@ -180,14 +181,8 @@ void ofApp::update() {
 	lander.setPosition(pos.x, pos.y, pos.z);
 
 	if (lander.getPosition().y < 0) {
-		// Reset lander
-		lander.setPosition(0, 1000, 2500);
-		velocity = glm::vec3(0, 0, 0);
-		landerRotation = 0;
-		lander.setRotation(0, landerRotation, 0, 1, 0);
-
-		collisionDetected = false;
-		bExploding = false;
+		// Restart lander
+		restartLander();
 	}
 
 	thrusterEmitter->update();
@@ -229,16 +224,18 @@ void ofApp::update() {
 
 	// Handle explosion timer and respawn logic
 	if (bExploding) {
-		if (ofGetElapsedTimef() - explosionStartTime >= respawnDelay) {
-			// Respawn lander after 3 seconds
-			lander.setPosition(0, 1000, 2500);         // Reset to initial position
-			velocity = glm::vec3(0, 0, 0);         // Reset velocity
-			landerRotation = 0;                    // Reset rotation
-			lander.setRotation(0, landerRotation, 0, 1, 0);
-			bExploding = false;  // Stop explosion timer
-			collisionDetected = false;  // Reset collision state
+		float elapsed = ofGetElapsedTimef() - explosionStartTime;
+
+		if (elapsed >= explosionDuration) {
+			// Reset lander
+			restartLander();
+		}
+		else {
+			// Freeze lander motion during explosion
+			return;  // skip rest of update() until explosion is done
 		}
 	}
+
 
 	if (bTelemetryEnabled) {
 		// Cast ray straight down from lander
@@ -524,7 +521,7 @@ void ofApp::keyPressed(int key) {
 			explosionEmitter.setPosition(lander.getPosition());
 			explosionEmitter.triggerExplosion();
 			explosionStartTime = ofGetElapsedTimef();
-			lander.setPosition(0, 1000, 2500);
+			restartLander();
 		}
 		break;
 	case 'G':
@@ -938,5 +935,27 @@ glm::vec3 ofApp::getMousePointOnPlane(glm::vec3 planePt, glm::vec3 planeNorm) {
 	else return glm::vec3(0, 0, 0);
 }
 
+void ofApp::restartLander() {
+	// Reset position, rotation, and velocity
+	if (bLanderLoaded) {
+		lander.setPosition(0, 1000, 2500);		
+		lander.setRotation(0, landerRotation, 0, 1, 0);
+		velocity = glm::vec3(0, 0, 0);
+	}
+
+	landerRotation = 0.0f;
+
+	// Reset control flags
+	thrusting = false;
+	moveLeft = moveRight = moveForward = moveBack = rotateLeft = rotateRight = false;
+
+	// Reset explosion state
+	bExploding = false;
+	explosionStartTime = 0.0f;
+
+	// Reset collision state
+	collisionDetected = false;
+	bCollisionFix = false;
+}
 
 

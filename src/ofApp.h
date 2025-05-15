@@ -37,6 +37,7 @@ public:
 	bool mouseIntersectPlane(ofVec3f planePoint, ofVec3f planeNorm, ofVec3f& point);
 	bool raySelectWithOctree(ofVec3f& pointRet);
 	glm::vec3 ofApp::getMousePointOnPlane(glm::vec3 p, glm::vec3 n);
+	void restartLander();
 
 	ofEasyCam cam;
 	ofxAssimpModelLoader mars, lander, moon;
@@ -102,7 +103,7 @@ public:
 	ExplosionEmitter explosionEmitter;
 	bool bExploding = false;
 	float explosionStartTime = 0.0f;
-	float respawnDelay = 3.0f;			// 3 second respawn delay
+	float explosionDuration = 30.0f;			// 3 second respawn delay
 
 	// Fuel system
 	float fuelTimeRemaining = 120.0f;  // 2 minutes = 120 seconds

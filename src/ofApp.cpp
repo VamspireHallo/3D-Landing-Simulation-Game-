@@ -1,13 +1,13 @@
 
 //--------------------------------------------------------------
 //
-//  Kevin M. Smith
+//  Professor: Kevin M. Smith
 //
-//  Octree Test - startup scene
+//  Final Project Game
 // 
 //
 //  Student Name:   < Vamsee Krishna Vusuwandla, Richie Nguyen >
-//  Date: <04/26>
+//  Date: <05/17>
 
 
 #include "ofApp.h"
@@ -35,6 +35,8 @@ void ofApp::setup() {
 	ofEnableDepthTest();
 
 	trackingPos = glm::vec3(0.0, 0.0, 0.0);
+	randAngle = 0.0;
+	randRadius = 0.0;
 	camType = 0;
 
 	// setup rudimentary lighting 
@@ -131,7 +133,15 @@ void ofApp::setup() {
 	explosionEmitter.setup(ofVec3f(0, 0, 0));
 
 	// Setting Moon gravity
-	gravity = -1.62f;
+	gravity = -0.165f;
+
+	//forces setup
+	velocity = glm::vec3(0.0000001, 0.0000001, 0.0000001);
+	acceleration = glm::vec3(-0.0000001, -0.0000001, -0.0000001);
+	forces = glm::vec3(0.0, 0.0, 0.0);
+	thrustPower = 1.0;
+	movePower = 0.25;
+	damping = 0.97;
 
 	bTelemetryEnabled = false;  // Initially, telemetry is turned off
 	altitudeAGL = 0.0f;
@@ -156,56 +166,41 @@ void ofApp::update() {
 	//camera settings
 	switch (camType) {
 	case 0://default camera; moves with lander at distance (F1)
-		trackingPos = glm::vec3(0.0, 0.0, 0.0);
 		cam.setPosition(lander.getPosition());
 		cam.setTarget(lander.getPosition());
 		cam.setDistance(100.0);
 		break;
-	case 1://tracking camera; tracks lander movement from ground (F2)
-		if (trackingPos == glm::vec3(0.0, 0.0, 0.0)) {
-			float randAngle = ofRandom(0.0, 359.0);
-			float radius = 15.0;
-			glm::vec3 radPos = glm::vec3(lander.getPosition().x + (radius * cos(glm::radians(randAngle))), lander.getPosition().y + (radius * sin(glm::radians(randAngle))), lander.getPosition().z - 100.0);
-			glm::vec3 rayDir = glm::normalize(radPos - lander.getPosition());
-			Ray camRay = Ray(Vector3(lander.getPosition().x, lander.getPosition().y, lander.getPosition().z), Vector3(rayDir.x, rayDir.y, rayDir.z));//creating ray from radius
-			bool rayIntersect = octree.intersect(camRay, octree.root, selectedNode);
-			if ((selectedNode.points.size() == 1) && (rayIntersect == true)) {
-				trackingPos = octree.mesh.getVertex(selectedNode.points[0]);//placing camera on terrain within radius
-			}
-		}
-		cam.setPosition(trackingPos);
+	case 1://tracking camera; tracks lander movement from radius (F2)
+		//cam.setPosition(trackingPos);
 		cam.setTarget(lander.getPosition());
-		cam.setDistance(0.0);
+		cam.setDistance(75.0);
 		break;
 	case 2://internal camera (F3)
-		trackingPos = glm::vec3(0.0, 0.0, 0.0);
 		cam.setPosition(lander.getPosition());
 		cam.setTarget(lander.getPosition());
 		cam.setDistance(0.0);
 		break;
 	case 3://top down camera (F4)
-		trackingPos = glm::vec3(0.0, 0.0, 0.0);
 		cam.setPosition(lander.getPosition().x, lander.getPosition().y + 125.0, lander.getPosition().z);
 		cam.setTarget(lander.getPosition());
 		cam.setDistance(0.0);
 		break;
 	default://other cases; camera faces terrain from far distance
-		trackingPos = glm::vec3(0.0, 0.0, 0.0);
 		cam.setTarget(glm::vec3(0.0, 0.0, 0.0));
 		cam.setPosition(glm::vec3(0.0, 0.0, 0.0));
 		cam.setDistance(1000.0);
 		break;
 	}
 
-	glm::vec3 force(0, 0, 0);
 	float dt = ofGetLastFrameTime();
 
 	// Fuel System Timer
 	if (fuelTimeRemaining > 0.0f) {
 		if (thrusting == true) {
-			fuelTimeRemaining -= dt;//lower timer if thruster is used
+			// Lower timer if thruster is being used
+			fuelTimeRemaining -= dt; 
 		}
-		
+
 		if (fuelTimeRemaining <= 0.0f) {
 			fuelTimeRemaining = 0.0f;
 			bFuelEmpty = true;
@@ -215,7 +210,7 @@ void ofApp::update() {
 
 	// Thruster Emitter
 	if (thrusting && !bFuelEmpty) {
-		force += glm::vec3(0, thrustPower, 0);  // Apply upward force
+		forces += glm::vec3(0, thrustPower, 0);  // Apply upward force
 
 		thrusterEmitter->startEmitting();
 
@@ -236,10 +231,10 @@ void ofApp::update() {
 	glm::vec3 forwardDir = glm::normalize(glm::vec3(rotationMatrix * glm::vec4(0, 0, -1, 0)));
 	glm::vec3 rightDir = glm::normalize(glm::vec3(rotationMatrix * glm::vec4(1, 0, 0, 0)));
 
-	if (moveForward) force += forwardDir * movePower;			// Up key
-	if (moveBack) force -= forwardDir * movePower;				// Down key
-	if (moveLeft) force -= rightDir * movePower;				// Left Key
-	if (moveRight) force += rightDir * movePower;				// Right Key
+	if (moveForward) forces += forwardDir * movePower;			// Up key
+	if (moveBack) forces -= forwardDir * movePower;				// Down key
+	if (moveLeft) forces -= rightDir * movePower;				// Left Key
+	if (moveRight) forces += rightDir * movePower;				// Right Key
 
 	if (rotateLeft) landerRotation += 4.0f;		// A key
 	if (rotateRight) landerRotation -= 4.0f;	// D key
@@ -247,23 +242,28 @@ void ofApp::update() {
 	lander.setRotation(0, landerRotation, 0, 1, 0);  // Lander Rotation
 
 	if (bGravityEnabled && !collisionDetected && !bLanded) {
-		force += glm::vec3(0, gravity, 0);
+		forces += glm::vec3(0, gravity, 0);
 	}
 
 	if (!bLanded) {
-		velocity += force * dt;
+		velocity += forces * dt;
 
 		// Slow down lander when colliding
-		if (collisionDetected && velocity.y < 0.1f) {
-			velocity.y *= 0.2f;
-		}
+		//if (collisionDetected && velocity.y < 0.1f) {
+			//velocity.y *= 0.2f;
+		//}
 
-		//running integrator
+		//physics integrator for movement
 		glm::vec3 pos = lander.getPosition();
 		pos += velocity * dt;
 		lander.setPosition(pos.x, pos.y, pos.z);
+		thrustLight.setPosition(lander.getPosition().x, lander.getPosition().y - 2.5, lander.getPosition().z);//setting position with p += vdt
 
-		thrustLight.setPosition(lander.getPosition().x, lander.getPosition().y - 2.5, lander.getPosition().z);
+		acceleration += forces;
+		velocity += acceleration * dt;//setting velocity with v += adt
+		velocity *= damping;
+		forces = glm::vec3(0.0, 0.0, 0.0);//resetting forces
+
 	}
 
 
@@ -284,10 +284,24 @@ void ofApp::update() {
 	bLanded = false;
 	for (auto& lbox : landingBoxes) {
 		if (bounds.overlap(lbox)) {
-			bLanded = true;
-			velocity = glm::vec3(0);
-			thrusting = false;
-			cout << "Landing box overlap detected!\n";
+			// Check if velocity is within safe landing limits
+			if (glm::abs(velocity.x) <= 10.0f && glm::abs(velocity.y) <= 10.0f && glm::abs(velocity.z) <= 10.0f) {
+				bLanded = true;
+				velocity = glm::vec3(0);
+				thrusting = false;
+			}
+			// Explode lander if outside of safety limits
+			else {
+				velocity = glm::vec3(0);
+				thrusting = false;
+				if (!explosionEmitter.isInProgress()) {
+					explosionEmitter.setPosition(lander.getPosition());
+					explosionEmitter.triggerExplosion();
+					explosionStartTime = ofGetElapsedTimef();
+					bExploding = true;
+					cout << "Destorying Lander, Failed Landing\n";
+				}
+			}
 			break;
 		}
 	}
@@ -302,21 +316,34 @@ void ofApp::update() {
 	for (const auto& colBox : colBoxList) {
 		if (bounds.overlap(colBox)) {
 			collisionDetected = true;
+			if (!bLanded && !explosionEmitter.isInProgress()) {//impulse force calcuation
+				glm::vec3 impactForce = glm::vec3(0.0, 0.0, 0.0);
 
-			// Only trigger explosion if it's a new collision
-			if (!wasInCollision && !explosionEmitter.isInProgress() && !bLanded) {
-				ofVec3f landerPos = lander.getPosition();
+				glm::vec3 collisionNormal = glm::vec3(0, 1, 0);//placeholder normal
+				float restitution = 0.5f;
+				impactForce = (1.0f + restitution) * glm::dot(-velocity, collisionNormal) * collisionNormal;
+				//cout << impactForce << endl;
+				float impactForceMag = glm::sqrt(impactForce.x + impactForce.y + impactForce.z);
+				//cout << impactForceMag << endl;
 
-				// Start explosion at the lander's position
-				explosionEmitter.setPosition(landerPos);
-				explosionEmitter.triggerExplosion();
+				velocity.x *= 0.5f;
+				velocity.z *= 0.5f;
 
-				// Set explosion start time
-				explosionStartTime = ofGetElapsedTimef();
-				bExploding = true;  // Start explosion timer
+				if (impactForceMag >= 5.0) {//excess impulse force
+					// Explode lander upon collision
+					velocity *= 0.00000001;
+					acceleration *= 0.0001;
+					forces = glm::vec3(0.0, 0.0, 0.0);
+					explosionEmitter.setPosition(lander.getPosition());
+					explosionEmitter.triggerExplosion();
+					explosionStartTime = ofGetElapsedTimef();
+					bExploding = true;
+					cout << "Crash! Impact force too high: " << impactForceMag << endl;
+				}
+				else {
+					forces += impactForce;
+				}
 			}
-
-			break;
 		}
 	}
 
@@ -356,7 +383,6 @@ void ofApp::update() {
 			if (bTelemetryEnabled) {
 				cout << "[TELEMETRY] No terrain detected directly beneath the lander." << endl;
 			}
-			
 		}
 	}
 }
@@ -386,7 +412,6 @@ void ofApp::draw() {
 		ofEnableLighting();              // shaded mode
 		mars.drawFaces();
 		landingAreas.drawFaces();
-		
 
 		ofMesh mesh;
 		if (bLanderLoaded && !bExploding) {
@@ -540,11 +565,16 @@ void ofApp::draw() {
 	int vx = ofGetWidth() - velocityWidth - 20;
 	ofDrawBitmapString(velocityText, vx, 50);
 
-	if (bTelemetryEnabled || bShowAltitude) {
+	if (bShowAltitude) {
 		string aglText = "Altitude AGL Sensor: " + ofToString(altitudeAGL, 2) + " m";
 		int textWidth = aglText.length() * 8;
 		int x = ofGetWidth() - textWidth - 20;
 		ofDrawBitmapString(aglText, x, 70);
+	}
+
+	if (bLanded) {
+		ofSetColor(ofColor::greenYellow);
+		ofDrawBitmapStringHighlight("Successful Landing!", ofGetWidth() / 2 - 100, ofGetHeight() / 2, ofColor::black, ofColor::greenYellow);
 	}
 }
 
@@ -578,20 +608,26 @@ void ofApp::drawAxis(ofVec3f location) {
 
 void ofApp::keyPressed(int key) {
 
-	//cout << key << endl;
-
 	switch (key) {
 	case 57344://F1
 		camType = 0;
+		cout << "switched to default view" << endl;
 		break;
 	case 57345://F2
+		randAngle = ofRandom(0.0, 359.0);
+		randRadius = ofRandom(15.0, 50.0);
+		trackingPos = glm::vec3((randRadius * cos(glm::radians(randAngle))), lander.getPosition().y + ofRandom(-5.0, 5.0), (randRadius * sin(glm::radians(randAngle))));
+		cam.setPosition(trackingPos);
 		camType = 1;
+		cout << "switched to tracking view" << endl;
 		break;
 	case 57346://F3
 		camType = 2;
+		cout << "switched to internal view" << endl;
 		break;
 	case 57347://F4
 		camType = 3;
+		cout << "switched to top down view" << endl;
 		break;
 	case 'B':
 	case 'b':

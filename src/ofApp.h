@@ -123,8 +123,14 @@ public:
 	//cameras
 	int camType;
 	glm::vec3 trackingPos;
+	float randRadius;
+	float randAngle;
 
 	//lighting
 	ofLight ambientLight;
 	ofLight thrustLight;
+
+	glm::vec3 acceleration;
+	glm::vec3 forces;
+	float damping;
 };

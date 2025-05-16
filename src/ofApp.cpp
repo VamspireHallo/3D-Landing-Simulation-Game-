@@ -1,13 +1,13 @@
 
 //--------------------------------------------------------------
 //
-//  Kevin M. Smith
+//  Professor: Kevin M. Smith
 //
-//  Octree Test - startup scene
+//  Final Project Game
 // 
 //
 //  Student Name:   < Vamsee Krishna Vusuwandla, Richie Nguyen >
-//  Date: <04/26>
+//  Date: <05/17>
 
 
 #include "ofApp.h"
@@ -27,7 +27,7 @@ void ofApp::setup() {
 	//	ofSetWindowShape(1024, 768);
 	cam.setDistance(10);
 	cam.setNearClip(.1);
-	cam.setFov(50);  
+	cam.setFov(50);
 	cam.setPosition(0, 1000, 3000);
 	ofSetVerticalSync(true);
 	cam.disableMouseInput();
@@ -136,7 +136,7 @@ void ofApp::setup() {
 	bTelemetryEnabled = false;  // Initially, telemetry is turned off
 	altitudeAGL = 0.0f;
 
-	fuelTimeRemaining = 120.0f; 
+	fuelTimeRemaining = 120.0f;
 	bFuelEmpty = false;
 	explosionDuration = 3.0f;
 
@@ -203,9 +203,10 @@ void ofApp::update() {
 	// Fuel System Timer
 	if (fuelTimeRemaining > 0.0f) {
 		if (thrusting == true) {
-			fuelTimeRemaining -= dt;//lower timer if thruster is used
+			// Lower timer if thruster is being used
+			fuelTimeRemaining -= dt;
 		}
-		
+
 		if (fuelTimeRemaining <= 0.0f) {
 			fuelTimeRemaining = 0.0f;
 			bFuelEmpty = true;
@@ -258,7 +259,6 @@ void ofApp::update() {
 			velocity.y *= 0.2f;
 		}
 
-		//running integrator
 		glm::vec3 pos = lander.getPosition();
 		pos += velocity * dt;
 		lander.setPosition(pos.x, pos.y, pos.z);
@@ -284,10 +284,24 @@ void ofApp::update() {
 	bLanded = false;
 	for (auto& lbox : landingBoxes) {
 		if (bounds.overlap(lbox)) {
-			bLanded = true;
-			velocity = glm::vec3(0);
-			thrusting = false;
-			cout << "Landing box overlap detected!\n";
+			// Check if velocity is within safe landing limits
+			if (glm::abs(velocity.x) <= 10.0f && glm::abs(velocity.y) <= 10.0f && glm::abs(velocity.z) <= 10.0f) {
+				bLanded = true;
+				velocity = glm::vec3(0);
+				thrusting = false;
+			}
+			// Explode lander if outside of safety limits
+			else {
+				velocity = glm::vec3(0);
+				thrusting = false;
+				if (!explosionEmitter.isInProgress()) {
+					explosionEmitter.setPosition(lander.getPosition());
+					explosionEmitter.triggerExplosion();
+					explosionStartTime = ofGetElapsedTimef();
+					bExploding = true;
+					cout << "Destorying Lander, Failed Landing\n";
+				}
+			}
 			break;
 		}
 	}
@@ -302,21 +316,27 @@ void ofApp::update() {
 	for (const auto& colBox : colBoxList) {
 		if (bounds.overlap(colBox)) {
 			collisionDetected = true;
+			if (!bLanded && !explosionEmitter.isInProgress()) {
+				float impactForce = velocity.y;
 
-			// Only trigger explosion if it's a new collision
-			if (!wasInCollision && !explosionEmitter.isInProgress() && !bLanded) {
-				ofVec3f landerPos = lander.getPosition();
+				if (impactForce <= -20.0f) {
+					// Explode lander upon collision
+					explosionEmitter.setPosition(lander.getPosition());
+					explosionEmitter.triggerExplosion();
+					explosionStartTime = ofGetElapsedTimef();
+					bExploding = true;
+					cout << "Crash! Impact force too high: " << velocity.y << endl;
+				}
+				else {
+					// Reflect velocity based on collision normal
+					glm::vec3 collisionNormal = glm::vec3(0, 1, 0);
+					float restitution = 0.5f;
+					velocity = velocity - (1.0f + restitution) * glm::dot(velocity, collisionNormal) * collisionNormal;
 
-				// Start explosion at the lander's position
-				explosionEmitter.setPosition(landerPos);
-				explosionEmitter.triggerExplosion();
-
-				// Set explosion start time
-				explosionStartTime = ofGetElapsedTimef();
-				bExploding = true;  // Start explosion timer
+					velocity.x *= 0.5f;
+					velocity.z *= 0.5f;
+				}
 			}
-
-			break;
 		}
 	}
 
@@ -356,7 +376,6 @@ void ofApp::update() {
 			if (bTelemetryEnabled) {
 				cout << "[TELEMETRY] No terrain detected directly beneath the lander." << endl;
 			}
-			
 		}
 	}
 }
@@ -386,7 +405,6 @@ void ofApp::draw() {
 		ofEnableLighting();              // shaded mode
 		mars.drawFaces();
 		landingAreas.drawFaces();
-		
 
 		ofMesh mesh;
 		if (bLanderLoaded && !bExploding) {
@@ -546,6 +564,11 @@ void ofApp::draw() {
 		int x = ofGetWidth() - textWidth - 20;
 		ofDrawBitmapString(aglText, x, 70);
 	}
+
+	if (bLanded) {
+		ofSetColor(ofColor::greenYellow);
+		ofDrawBitmapStringHighlight("Successful Landing!", ofGetWidth() / 2 - 100, ofGetHeight() / 2, ofColor::black, ofColor::greenYellow);
+	}
 }
 
 
@@ -577,8 +600,6 @@ void ofApp::drawAxis(ofVec3f location) {
 
 
 void ofApp::keyPressed(int key) {
-
-	//cout << key << endl;
 
 	switch (key) {
 	case 57344://F1

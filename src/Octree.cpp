@@ -220,21 +220,21 @@ bool Octree::intersect(const Ray &ray, const TreeNode & node, TreeNode & nodeRtn
 }
 
 bool Octree::intersect(const Box &box, TreeNode & node, vector<Box> & boxListRtn) {
-	bool intersects = false;
-	// Check if the node's box overlaps with the given box
-	if (node.box.overlap(box)) {  // <-- fix here
-		if (node.children.empty()) {
-			boxListRtn.push_back(node.box);
+
+	Box testBox = box;
+	//cout << "box point (min): " << testBox.min().x() << ", " << testBox.min().y() << ", " << testBox.min().z() << endl;
+	//cout << "box point (max): " << testBox.max().x() << ", " << testBox.max().y() << ", " << testBox.max().z() << endl;
+	for (int i = 0; i < node.children.size(); i++) {
+		if ((testBox.overlap(node.children[i].box) == true) && (node.children[i].points.size() <= 1)) {//if current box overlaps with node boxes with less than 2 points
+			//cout << "box intersection with size " << node.children[i].points.size() << endl;
+			boxListRtn.push_back(node.children[i].box);
+			//cout << boxListRtn.size() << endl;
+			return true;
 		}
-		intersects = true;
+		else {
+			intersect(box, node.children[i], boxListRtn);//recursive call with child boxes
+		}
 	}
-
-	// Recursively check for intersection with child boxes
-	for (auto& child : node.children) {
-		intersects = intersect(box, child, boxListRtn) || intersects;
-	}
-
-	return intersects;
 }
 
 void Octree::draw(TreeNode & node, int numLevels, int level) {

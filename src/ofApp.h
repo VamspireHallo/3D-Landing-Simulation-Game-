@@ -86,7 +86,7 @@ public:
 
 	// Spacecraft
 	glm::vec3 velocity;
-	float thrustPower = 5.0f;
+	float thrustPower = 4.0f;
 	float movePower = 2.0f;
 	float landerRotation = 0.0f;
 	bool thrusting = false;
@@ -94,6 +94,7 @@ public:
 	bool bGravityEnabled = false;
 	float gravity;
 	bool bShowAltitude = true;
+	glm::vec3 initPos;
 
 	// Spacecraft thruster
 	ParticleSystem* thrusterEmitter = NULL;
@@ -130,6 +131,7 @@ public:
 	ofLight ambientLight;
 	ofLight thrustLight;
 
+	//integrator forces
 	glm::vec3 acceleration;
 	glm::vec3 forces;
 	float damping;

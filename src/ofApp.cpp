@@ -27,12 +27,14 @@ void ofApp::setup() {
 	//	ofSetWindowShape(1024, 768);
 	cam.setDistance(10);
 	cam.setNearClip(.1);
+	//cam.setFarClip(10000.0);
 	cam.setFov(50);
 	cam.setPosition(0, 1000, 3000);
 	ofSetVerticalSync(true);
 	cam.disableMouseInput();
 	ofEnableSmoothing();
 	ofEnableDepthTest();
+	//cout << cam.getFarClip() << endl;
 
 	trackingPos = glm::vec3(0.0, 0.0, 0.0);
 	randAngle = 0.0;
@@ -49,7 +51,7 @@ void ofApp::setup() {
 	ambientLight.setDirectional();
 	ambientLight.setAmbientColor(ofFloatColor(2.0, 2.0, 2.0));
 	ambientLight.setDiffuseColor(ofFloatColor(2.5, 2.5, 2.5));
-	ambientLight.setSpecularColor(ofFloatColor(50.0, 50.0, 50.0));
+	ambientLight.setSpecularColor(ofFloatColor(75.0, 75.0, 75.0));
 	ambientLight.rotate(30, ofVec3f(0.0, 1.0, 0.0));
 	ambientLight.rotate(-35, ofVec3f(1.0, 0.0, 0.0));
 	ambientLight.setPosition(0.0, 500.0, 0.0);
@@ -57,11 +59,11 @@ void ofApp::setup() {
 	thrustLight.setup();
 	thrustLight.setSpotlight();
 	thrustLight.setScale(0.1);
-	thrustLight.setSpotlightCutOff(30.0);
+	thrustLight.setSpotlightCutOff(50.0);
 	thrustLight.setAttenuation(2.0, 0.001, 0.001);
-	thrustLight.setAmbientColor(ofFloatColor(3.0, 3.0, 3.0));
-	thrustLight.setDiffuseColor(ofFloatColor(3.0, 3.0, 3.0));
-	thrustLight.setSpecularColor(ofFloatColor(100.0, 100.0, 100.0));
+	thrustLight.setAmbientColor(ofFloatColor(4.0, 4.0, 4.0));
+	thrustLight.setDiffuseColor(ofFloatColor(4.0, 4.0, 4.0));
+	thrustLight.setSpecularColor(ofFloatColor(200.0, 200.0, 200.0));
 	thrustLight.rotate(-90, ofVec3f(1.0, 0.0, 0.0));
 	thrustLight.setPosition(0.0, 500.0, 0.0);
 
@@ -69,8 +71,8 @@ void ofApp::setup() {
 	if (lander.loadModel("3DModels/Spacecraft.obj")) {
 		bLanderLoaded = true;
 		lander.setScaleNormalization(false);
-		lander.setPosition(0, 1000, 2500);
-		//lander.setPosition(1200, 1000, 1400);		// For testing only
+		initPos = glm::vec3(0, 1000, 2500);
+		lander.setPosition(initPos.x, initPos.y, initPos.z);
 		thrustLight.setPosition(lander.getPosition().x, lander.getPosition().y - 2.5, lander.getPosition().z);
 
 		// Initialize lander bounds
@@ -99,16 +101,13 @@ void ofApp::setup() {
 	//  Create Octree for testing.
 	//
 
-	octree.create(mars.getMesh(0), 20);
-
-	cout << "Number of Verts: " << mars.getMesh(0).getNumVertices() << endl;
-
 	testBox = Box(Vector3(3, 3, 0), Vector3(5, 5, 2));
 
 	float startTime = ofGetElapsedTimef() * 1000.0f;
-	octree.create(mars.getMesh(0), 7);  // or however many levels you use
+	octree.create(mars.getMesh(0), 10);  // or however many levels you use
 	float endTime = ofGetElapsedTimef() * 1000.0f;
 	cout << "Octree Build Time: " << (endTime - startTime) << " ms" << endl;
+	cout << "Number of Verts: " << mars.getMesh(0).getNumVertices() << endl;
 
 	// Landing Area Boxes Coordinates
 	landingBoxes.push_back(Box(Vector3(1180, 500, 1380), Vector3(1220, 650, 1420)));
@@ -168,12 +167,12 @@ void ofApp::update() {
 	case 0://default camera; moves with lander at distance (F1)
 		cam.setPosition(lander.getPosition());
 		cam.setTarget(lander.getPosition());
-		cam.setDistance(100.0);
+		cam.setDistance(125.0);
 		break;
 	case 1://tracking camera; tracks lander movement from radius (F2)
 		cam.setPosition(trackingPos);
 		cam.setTarget(lander.getPosition());
-		cam.setDistance(75.0);
+		cam.setDistance(0.0);
 		break;
 	case 2://internal camera (F3)
 		cam.setPosition(lander.getPosition() + glm::vec4(0, 0, -10, 0));
@@ -620,8 +619,9 @@ void ofApp::keyPressed(int key) {
 		break;
 	case 57345://F2
 		randAngle = ofRandom(0.0, 359.0);
-		randRadius = ofRandom(15.0, 50.0);
-		trackingPos = glm::vec3((randRadius * cos(glm::radians(randAngle))), lander.getPosition().y + ofRandom(-5.0, 5.0), (randRadius * sin(glm::radians(randAngle))));
+		randRadius = ofRandom(75.0, 100.0);
+		trackingPos = glm::vec3(lander.getPosition().x + (randRadius * cos(glm::radians(randAngle))), lander.getPosition().y + ofRandom(-25.0, 25.0), lander.getPosition().z + (randRadius * sin(glm::radians(randAngle))));
+		//cout << trackingPos << endl;
 		cam.setPosition(trackingPos);
 		camType = 1;
 		cout << "switched to tracking view" << endl;
@@ -1123,8 +1123,7 @@ glm::vec3 ofApp::getMousePointOnPlane(glm::vec3 planePt, glm::vec3 planeNorm) {
 void ofApp::restartLander() {
 	// Reset position, rotation, and velocity
 	if (bLanderLoaded) {
-		lander.setPosition(0, 1000, 2500);
-		//lander.setPosition(1200, 1000, 1400);		// For testing only
+		lander.setPosition(initPos.x, initPos.y, initPos.z);
 		lander.setRotation(0, landerRotation, 0, 1, 0);
 		velocity = glm::vec3(0, 0, 0);
 	}
@@ -1134,6 +1133,7 @@ void ofApp::restartLander() {
 	// Reset control flags
 	thrusting = false;
 	moveLeft = moveRight = moveForward = moveBack = rotateLeft = rotateRight = false;
+	float fuelTimeRemaining = 120.0f;  // 2 minutes = 120 seconds
 
 	// Reset explosion state
 	bExploding = false;

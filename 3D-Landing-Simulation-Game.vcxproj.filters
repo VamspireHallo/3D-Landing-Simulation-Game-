@@ -58,6 +58,9 @@
     <ClCompile Include="src\Util.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\ExplosionEmitter.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -416,13 +419,13 @@
     <ClInclude Include="src\vector3.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\ParticleSystem.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="src\Shape.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\Emitter.h">
+    <ClInclude Include="src\ExplosionEmitter.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ParticleEmitter.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

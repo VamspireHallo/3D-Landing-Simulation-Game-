@@ -93,7 +93,7 @@ public:
 	bool moveLeft = false, moveRight = false, moveForward = false, moveBack = false, rotateLeft = false, rotateRight = false;
 	bool bGravityEnabled = false;
 	float gravity;
-	bool bShowAltitude = false;
+	bool bShowAltitude = true;
 
 	// Spacecraft thruster
 	ParticleSystem* thrusterEmitter = NULL; 
@@ -119,4 +119,12 @@ public:
 	//Landing Zones
 	vector<Box> landingBoxes;
 	bool bLanded = false;
+
+	//cameras
+	int camType;
+	glm::vec3 trackingPos;
+
+	//lighting
+	ofLight ambientLight;
+	ofLight thrustLight;
 };

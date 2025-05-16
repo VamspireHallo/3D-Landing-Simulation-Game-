@@ -6,7 +6,7 @@
 //  Octree Test - startup scene
 // 
 //
-//  Student Name:   < Vamsee Krishna Vusuwandla >
+//  Student Name:   < Vamsee Krishna Vusuwandla, Richie Nguyen >
 //  Date: <04/26>
 
 
@@ -34,9 +34,34 @@ void ofApp::setup() {
 	ofEnableSmoothing();
 	ofEnableDepthTest();
 
+	trackingPos = glm::vec3(0.0, 0.0, 0.0);
+	camType = 0;
+
 	// setup rudimentary lighting 
 	//
-	initLightingAndMaterials();
+	//initLightingAndMaterials();
+
+	//lighting setup
+	ambientLight.setup();
+	ambientLight.enable();
+	ambientLight.setDirectional();
+	ambientLight.setAmbientColor(ofFloatColor(2.0, 2.0, 2.0));
+	ambientLight.setDiffuseColor(ofFloatColor(2.5, 2.5, 2.5));
+	ambientLight.setSpecularColor(ofFloatColor(50.0, 50.0, 50.0));
+	ambientLight.rotate(30, ofVec3f(0.0, 1.0, 0.0));
+	ambientLight.rotate(-35, ofVec3f(1.0, 0.0, 0.0));
+	ambientLight.setPosition(0.0, 500.0, 0.0);
+
+	thrustLight.setup();
+	thrustLight.setSpotlight();
+	thrustLight.setScale(0.1);
+	thrustLight.setSpotlightCutOff(30.0);
+	thrustLight.setAttenuation(2.0, 0.001, 0.001);
+	thrustLight.setAmbientColor(ofFloatColor(3.0, 3.0, 3.0));
+	thrustLight.setDiffuseColor(ofFloatColor(3.0, 3.0, 3.0));
+	thrustLight.setSpecularColor(ofFloatColor(100.0, 100.0, 100.0));
+	thrustLight.rotate(-90, ofVec3f(1.0, 0.0, 0.0));
+	thrustLight.setPosition(0.0, 500.0, 0.0);
 
 	// Load lander model
 	if (lander.loadModel("3DModels/Spacecraft.obj")) {
@@ -44,6 +69,7 @@ void ofApp::setup() {
 		lander.setScaleNormalization(false);
 		//lander.setPosition(0, 1000, 2500);
 		lander.setPosition(1200, 1000, 1400);
+		thrustLight.setPosition(lander.getPosition().x, lander.getPosition().y - 2.5, lander.getPosition().z);
 
 		// Initialize lander bounds
 		ofVec3f min = lander.getSceneMin() + lander.getPosition();
@@ -127,12 +153,59 @@ void ofApp::update() {
 
 	if (!bLanderLoaded) return;
 
+	//camera settings
+	switch (camType) {
+	case 0://default camera; moves with lander at distance (F1)
+		trackingPos = glm::vec3(0.0, 0.0, 0.0);
+		cam.setPosition(lander.getPosition());
+		cam.setTarget(lander.getPosition());
+		cam.setDistance(100.0);
+		break;
+	case 1://tracking camera; tracks lander movement from ground (F2)
+		if (trackingPos == glm::vec3(0.0, 0.0, 0.0)) {
+			float randAngle = ofRandom(0.0, 359.0);
+			float radius = 15.0;
+			glm::vec3 radPos = glm::vec3(lander.getPosition().x + (radius * cos(glm::radians(randAngle))), lander.getPosition().y + (radius * sin(glm::radians(randAngle))), lander.getPosition().z - 100.0);
+			glm::vec3 rayDir = glm::normalize(radPos - lander.getPosition());
+			Ray camRay = Ray(Vector3(lander.getPosition().x, lander.getPosition().y, lander.getPosition().z), Vector3(rayDir.x, rayDir.y, rayDir.z));//creating ray from radius
+			bool rayIntersect = octree.intersect(camRay, octree.root, selectedNode);
+			if ((selectedNode.points.size() == 1) && (rayIntersect == true)) {
+				trackingPos = octree.mesh.getVertex(selectedNode.points[0]);//placing camera on terrain within radius
+			}
+		}
+		cam.setPosition(trackingPos);
+		cam.setTarget(lander.getPosition());
+		cam.setDistance(0.0);
+		break;
+	case 2://internal camera (F3)
+		trackingPos = glm::vec3(0.0, 0.0, 0.0);
+		cam.setPosition(lander.getPosition());
+		cam.setTarget(lander.getPosition());
+		cam.setDistance(0.0);
+		break;
+	case 3://top down camera (F4)
+		trackingPos = glm::vec3(0.0, 0.0, 0.0);
+		cam.setPosition(lander.getPosition().x, lander.getPosition().y + 125.0, lander.getPosition().z);
+		cam.setTarget(lander.getPosition());
+		cam.setDistance(0.0);
+		break;
+	default://other cases; camera faces terrain from far distance
+		trackingPos = glm::vec3(0.0, 0.0, 0.0);
+		cam.setTarget(glm::vec3(0.0, 0.0, 0.0));
+		cam.setPosition(glm::vec3(0.0, 0.0, 0.0));
+		cam.setDistance(1000.0);
+		break;
+	}
+
 	glm::vec3 force(0, 0, 0);
 	float dt = ofGetLastFrameTime();
 
 	// Fuel System Timer
 	if (fuelTimeRemaining > 0.0f) {
-		fuelTimeRemaining -= dt;
+		if (thrusting == true) {
+			fuelTimeRemaining -= dt;//lower timer if thruster is used
+		}
+		
 		if (fuelTimeRemaining <= 0.0f) {
 			fuelTimeRemaining = 0.0f;
 			bFuelEmpty = true;
@@ -185,9 +258,12 @@ void ofApp::update() {
 			velocity.y *= 0.2f;
 		}
 
+		//running integrator
 		glm::vec3 pos = lander.getPosition();
 		pos += velocity * dt;
 		lander.setPosition(pos.x, pos.y, pos.z);
+
+		thrustLight.setPosition(lander.getPosition().x, lander.getPosition().y - 2.5, lander.getPosition().z);
 	}
 
 
@@ -259,7 +335,7 @@ void ofApp::update() {
 	}
 
 
-	if (bTelemetryEnabled) {
+	if (bShowAltitude) {
 		// Cast ray straight down from lander
 		glm::vec3 landerPos = lander.getPosition();
 		glm::vec3 rayDir = glm::vec3(0, -1, 0); // Downward direction
@@ -277,7 +353,10 @@ void ofApp::update() {
 			altitudeAGL = distanceToSurface;
 		}
 		else {
-			cout << "[TELEMETRY] No terrain detected directly beneath the lander." << endl;
+			if (bTelemetryEnabled) {
+				cout << "[TELEMETRY] No terrain detected directly beneath the lander." << endl;
+			}
+			
 		}
 	}
 }
@@ -307,6 +386,7 @@ void ofApp::draw() {
 		ofEnableLighting();              // shaded mode
 		mars.drawFaces();
 		landingAreas.drawFaces();
+		
 
 		ofMesh mesh;
 		if (bLanderLoaded && !bExploding) {
@@ -432,6 +512,14 @@ void ofApp::draw() {
 		explosionEmitter.draw();  // Render the explosion particles
 	}
 
+	ambientLight.enable();
+	if (thrusting == true) {
+		thrustLight.enable();
+	}
+	else {
+		thrustLight.disable();
+	}
+
 	ofPopMatrix();
 	cam.end();
 
@@ -452,7 +540,7 @@ void ofApp::draw() {
 	int vx = ofGetWidth() - velocityWidth - 20;
 	ofDrawBitmapString(velocityText, vx, 50);
 
-	if (bTelemetryEnabled) {
+	if (bTelemetryEnabled || bShowAltitude) {
 		string aglText = "Altitude AGL Sensor: " + ofToString(altitudeAGL, 2) + " m";
 		int textWidth = aglText.length() * 8;
 		int x = ofGetWidth() - textWidth - 20;
@@ -490,7 +578,21 @@ void ofApp::drawAxis(ofVec3f location) {
 
 void ofApp::keyPressed(int key) {
 
+	//cout << key << endl;
+
 	switch (key) {
+	case 57344://F1
+		camType = 0;
+		break;
+	case 57345://F2
+		camType = 1;
+		break;
+	case 57346://F3
+		camType = 2;
+		break;
+	case 57347://F4
+		camType = 3;
+		break;
 	case 'B':
 	case 'b':
 		bDisplayBBoxes = !bDisplayBBoxes;
@@ -519,7 +621,7 @@ void ofApp::keyPressed(int key) {
 		cam.reset();
 		break;
 	case 's':
-		savePicture();
+		//savePicture();
 		break;
 	case 't':
 		setCameraTarget();

@@ -41,6 +41,8 @@ void ofApp::setup() {
 	randRadius = 0.0;
 	camType = 0;
 
+	backgroundImage.load("BG/Stars.png");
+
 	// setup rudimentary lighting 
 	//
 	//initLightingAndMaterials();
@@ -389,7 +391,12 @@ void ofApp::update() {
 //--------------------------------------------------------------
 void ofApp::draw() {
 
-	ofBackground(ofColor::black);
+	//ofBackground(ofColor::black);
+	ofClear(0);
+
+	ofDisableDepthTest();
+	backgroundImage.draw(0, 0, ofGetWidth(), ofGetHeight());
+	ofEnableDepthTest();
 
 	glDepthMask(false);
 	if (!bHide) gui.draw();

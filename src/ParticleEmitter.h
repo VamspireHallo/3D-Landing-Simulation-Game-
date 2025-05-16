@@ -21,13 +21,38 @@ public:
         alpha = std::max(0.0f, alpha - 10.0f);
     }
 
+    void drawWithShader(ofShader& shader, ofTexture& texture) {
+        if (alpha <= 0) return;
+
+        ofPushStyle();
+
+        shader.begin();
+        shader.setUniformTexture("tex", texture, 0);
+
+        ofEnablePointSprites();  // enables GL point sprite mode
+
+        ofMesh mesh;
+        mesh.setMode(OF_PRIMITIVE_POINTS);
+        mesh.addVertex(pos);
+        mesh.addNormal(glm::vec3(scale.x, 0, 0));  // Point size in normal.x
+        mesh.addColor(ofFloatColor(color, alpha / 255.0f));  // Pass alpha as float
+
+        mesh.draw();
+
+        ofDisablePointSprites();
+
+        shader.end();
+
+        ofPopStyle();
+    }
+
+
     // Drawing the ring as a vertical 3D torus
     void draw() override {
         if (alpha <= 0) return;
 
         ofPushStyle();
         ofSetColor(color.r, color.g, color.b, alpha);
-
 
         if (altMode) {
             ofDrawSphere(pos + glm::vec3(ofRandom(-0.2f, 0.2f), ofRandom(-0.2f, 0.2f), ofRandom(-0.2f, 0.2f)), scale.x);
@@ -80,7 +105,22 @@ public:
 
 class ParticleSystem {
 public:
-    ParticleSystem() : isEmitting(true) {}
+    ParticleSystem() : isEmitting(true) {
+        ofDisableArbTex(); // Needed for GL point sprites (use normalized tex coords)
+
+        if (!particleImage.load("images/flare.png")) {
+            ofLogError("ParticleSystem") << "Failed to load particle image";
+        }
+        else {
+            particleImage.getTexture().setTextureMinMagFilter(GL_LINEAR, GL_LINEAR);
+            particleTexture = &particleImage.getTexture();
+        }
+
+        shaderLoaded = shader.load("shaders/shader.vert", "shaders/shader.frag");
+        if (!shaderLoaded) {
+            ofLogError("ParticleSystem") << "Failed to load shader";
+        }
+    }
 
     void update() {
         for (auto& ring : particles) {
@@ -98,10 +138,18 @@ public:
     }
 
     void draw() {
-        for (auto& ring : particles) {
-            ring.draw();
+        if (shaderLoaded && particleTexture != nullptr) {
+            for (auto& ring : particles) {
+                ring.drawWithShader(shader, *particleTexture);
+            }
+        }
+        else {
+            for (auto& ring : particles) {
+                ring.draw();
+            }
         }
     }
+
 
     void emit(glm::vec3 position, glm::vec3 direction, float speed, ofColor color = ofColor(255, 140, 0), bool useAltMode = false) {
         if (isEmitting) {
@@ -139,8 +187,11 @@ public:
         return glm::vec3(x, y, z);
     }
 
-
+    ofTexture* particleTexture = nullptr;
 private:
     std::vector<Emitter> particles;
     bool isEmitting;  // Flag to control emission
+    ofShader shader;
+    bool shaderLoaded;
+    ofImage particleImage;
 };

@@ -84,6 +84,8 @@ public:
 	ofxToggle timingToggle;
 	bool bTimingInfo = false;
 
+	ofImage backgroundImage;
+
 	// Spacecraft
 	glm::vec3 velocity;
 	float thrustPower = 4.0f;
@@ -109,8 +111,8 @@ public:
 	float fuelTimeRemaining = 120.0f;  // 2 minutes = 120 seconds
 	bool bFuelEmpty = false;
 
-	// shaders (Implement later)
-	ofShader shader;
+	// Particle shaders
+	//ofShader particleShader;
 
 	// Altitude Sensor
 	bool bTelemetryEnabled;

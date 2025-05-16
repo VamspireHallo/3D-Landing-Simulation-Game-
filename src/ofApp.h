@@ -40,7 +40,7 @@ public:
 	void restartLander();
 
 	ofEasyCam cam;
-	ofxAssimpModelLoader mars, lander, moon;
+	ofxAssimpModelLoader mars, lander, landingAreas;
 	ofLight light;
 	Box boundingBox, landerBounds;
 	Box testBox;
@@ -50,7 +50,6 @@ public:
 	TreeNode selectedNode;
 	glm::vec3 mouseDownPos, mouseLastPos;
 	bool bInDrag = false;
-
 
 	ofxIntSlider numLevels;
 	ofxPanel gui;
@@ -117,4 +116,7 @@ public:
 	float altitudeAGL;      
 	const float rayDistance = 1000.0f;
 
+	//Landing Zones
+	vector<Box> landingBoxes;
+	bool bLanded = false;
 };

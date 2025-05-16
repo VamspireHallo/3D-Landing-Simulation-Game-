@@ -42,7 +42,8 @@ void ofApp::setup() {
 	if (lander.loadModel("3DModels/Spacecraft.obj")) {
 		bLanderLoaded = true;
 		lander.setScaleNormalization(false);
-		lander.setPosition(0, 1000, 2500);  // Adjust initial height if needed
+		//lander.setPosition(0, 1000, 2500);
+		lander.setPosition(1200, 1000, 1400);
 
 		// Initialize lander bounds
 		ofVec3f min = lander.getSceneMin() + lander.getPosition();
@@ -53,10 +54,12 @@ void ofApp::setup() {
 		ofLogError("setup") << "Spacecraft model failed to load!";
 	}
 
+	landingAreas.loadModel("3DModels/LandingArea.obj");
+	landingAreas.setScaleNormalization(false);
+
 	// Loading Terrain Model
 	mars.loadModel("3DModels/TerrainMap.obj");
 	//mars.loadModel("3DModels/Map.obj");
-
 	mars.setScaleNormalization(false);
 
 	// create sliders for testing
@@ -78,6 +81,11 @@ void ofApp::setup() {
 	octree.create(mars.getMesh(0), 7);  // or however many levels you use
 	float endTime = ofGetElapsedTimef() * 1000.0f;
 	cout << "Octree Build Time: " << (endTime - startTime) << " ms" << endl;
+
+	// Landing Area Boxes Coordinates
+	landingBoxes.push_back(Box(Vector3(1180, 500, 1380), Vector3(1220, 650, 1420)));
+	landingBoxes.push_back(Box(Vector3(-1320, 0, 480), Vector3(-1280, 150, 520)));
+	landingBoxes.push_back(Box(Vector3(1180, 3000, -1020), Vector3(1220, 3100, -980)));
 
 	// Pushing in colors for octree
 	levelColors.push_back(ofColor::red);
@@ -160,25 +168,28 @@ void ofApp::update() {
 	if (moveLeft) force -= rightDir * movePower;				// Left Key
 	if (moveRight) force += rightDir * movePower;				// Right Key
 
-	if (rotateLeft) landerRotation -= 4.0f;		// A key
-	if (rotateRight) landerRotation += 4.0f;	// D key
+	if (rotateLeft) landerRotation += 4.0f;		// A key
+	if (rotateRight) landerRotation -= 4.0f;	// D key
 
 	lander.setRotation(0, landerRotation, 0, 1, 0);  // Lander Rotation
 
-	if (bGravityEnabled && !collisionDetected) {
+	if (bGravityEnabled && !collisionDetected && !bLanded) {
 		force += glm::vec3(0, gravity, 0);
 	}
 
-	velocity += force * dt;
+	if (!bLanded) {
+		velocity += force * dt;
 
-	//Slow down lander when colliding
-	if (collisionDetected && velocity.y < 0.1f) {
-		velocity.y *= 0.2f;
+		// Slow down lander when colliding
+		if (collisionDetected && velocity.y < 0.1f) {
+			velocity.y *= 0.2f;
+		}
+
+		glm::vec3 pos = lander.getPosition();
+		pos += velocity * dt;
+		lander.setPosition(pos.x, pos.y, pos.z);
 	}
 
-	glm::vec3 pos = lander.getPosition();
-	pos += velocity * dt;
-	lander.setPosition(pos.x, pos.y, pos.z);
 
 	if (lander.getPosition().y < 0) {
 		// Restart lander
@@ -194,6 +205,17 @@ void ofApp::update() {
 
 	Box bounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
 
+	bLanded = false;
+	for (auto& lbox : landingBoxes) {
+		if (bounds.overlap(lbox)) {
+			bLanded = true;
+			velocity = glm::vec3(0);
+			thrusting = false;
+			cout << "Landing box overlap detected!\n";
+			break;
+		}
+	}
+
 	colBoxList.clear();
 	octree.intersect(bounds, octree.root, colBoxList);
 
@@ -206,7 +228,7 @@ void ofApp::update() {
 			collisionDetected = true;
 
 			// Only trigger explosion if it's a new collision
-			if (!wasInCollision && !explosionEmitter.isInProgress()) {
+			if (!wasInCollision && !explosionEmitter.isInProgress() && !bLanded) {
 				ofVec3f landerPos = lander.getPosition();
 
 				// Start explosion at the lander's position
@@ -284,6 +306,7 @@ void ofApp::draw() {
 	else {
 		ofEnableLighting();              // shaded mode
 		mars.drawFaces();
+		landingAreas.drawFaces();
 
 		ofMesh mesh;
 		if (bLanderLoaded && !bExploding) {
@@ -341,7 +364,27 @@ void ofApp::draw() {
 	if (bDisplayLeafNodes) {
 		octree.drawLeafNodes(octree.root);
 		cout << "num leaf: " << octree.numLeaf << endl;
+
+		ofNoFill();
+		ofSetColor(ofColor::cyan);  // or any color that stands out
+		for (const Box& box : landingBoxes) {
+			ofNoFill();
+			ofSetColor(ofColor::orange);
+
+			for (const Box& box : landingBoxes) {
+				Vector3 min = box.parameters[0];
+				Vector3 max = box.parameters[1];
+				Vector3 size = max - min;
+				Vector3 center = size / 2 + min;
+				ofVec3f p = ofVec3f(center.x(), center.y(), center.z());
+				float w = size.x();
+				float h = size.y();
+				float d = size.z();
+				ofDrawBox(p, w, h, d);
+			}
+		}
 	}
+
 	else if (bDisplayOctree) {
 		int colorIndex = numLevels % levelColors.size();
 		ofSetColor(levelColors[colorIndex]);
@@ -363,7 +406,6 @@ void ofApp::draw() {
 		octree.drawBox(box);
 	}
 	ofSetColor(255);
-
 
 	if (bCollisionFix) {
 		glm::vec3 landerPos = lander.getPosition();
@@ -655,7 +697,7 @@ void ofApp::mousePressed(int x, int y, int button) {
 			bLanderSelected = false;
 		}
 	}
-	//else {
+	else {
 		ofVec3f p;
 		raySelectWithOctree(p);
 
@@ -665,7 +707,7 @@ void ofApp::mousePressed(int x, int y, int button) {
 		if (bTimingInfo) {
 			cout << "Ray Intersection Search Time: " << (endTime - startTime) << " ms" << endl;
 		}
-	//}
+	}
 }
 
 bool ofApp::raySelectWithOctree(ofVec3f& pointRet) {
@@ -938,7 +980,8 @@ glm::vec3 ofApp::getMousePointOnPlane(glm::vec3 planePt, glm::vec3 planeNorm) {
 void ofApp::restartLander() {
 	// Reset position, rotation, and velocity
 	if (bLanderLoaded) {
-		lander.setPosition(0, 1000, 2500);		
+		//lander.setPosition(0, 1000, 2500);
+		lander.setPosition(1200, 1000, 1400);
 		lander.setRotation(0, landerRotation, 0, 1, 0);
 		velocity = glm::vec3(0, 0, 0);
 	}
@@ -956,6 +999,8 @@ void ofApp::restartLander() {
 	// Reset collision state
 	collisionDetected = false;
 	bCollisionFix = false;
+
+	bLanded = false;
 }
 
 

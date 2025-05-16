@@ -96,13 +96,13 @@ public:
 	bool bShowAltitude = true;
 
 	// Spacecraft thruster
-	ParticleSystem* thrusterEmitter = NULL; 
+	ParticleSystem* thrusterEmitter = NULL;
 
 	// Explosion state
 	ExplosionEmitter explosionEmitter;
 	bool bExploding = false;
 	float explosionStartTime = 0.0f;
-	float explosionDuration = 30.0f;			// 3 second respawn delay
+	float explosionDuration = 3.0f;			// 3 second respawn delay
 
 	// Fuel system
 	float fuelTimeRemaining = 120.0f;  // 2 minutes = 120 seconds
@@ -113,7 +113,7 @@ public:
 
 	// Altitude Sensor
 	bool bTelemetryEnabled;
-	float altitudeAGL;      
+	float altitudeAGL;
 	const float rayDistance = 1000.0f;
 
 	//Landing Zones
@@ -123,8 +123,14 @@ public:
 	//cameras
 	int camType;
 	glm::vec3 trackingPos;
+	float randRadius;
+	float randAngle;
 
 	//lighting
 	ofLight ambientLight;
 	ofLight thrustLight;
+
+	glm::vec3 acceleration;
+	glm::vec3 forces;
+	float damping;
 };

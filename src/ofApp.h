@@ -130,6 +130,9 @@ public:
 	//lighting
 	ofLight ambientLight;
 	ofLight thrustLight;
+	ofLight landLightFlat;
+	ofLight landLightCanyon;
+	ofLight landLightPeaks;
 
 	//integrator forces
 	glm::vec3 acceleration;

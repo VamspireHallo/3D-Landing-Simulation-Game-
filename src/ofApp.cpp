@@ -67,11 +67,42 @@ void ofApp::setup() {
 	thrustLight.rotate(-90, ofVec3f(1.0, 0.0, 0.0));
 	thrustLight.setPosition(0.0, 500.0, 0.0);
 
+	landLightFlat.setup();
+	landLightFlat.setSpotlight();
+	landLightFlat.setScale(0.1);
+	landLightFlat.setSpotlightCutOff(100.0);
+	landLightFlat.setAttenuation(2.0, 0.001, 0.001);
+	landLightFlat.setAmbientColor(ofFloatColor(2.5, 2.5, 2.5));
+	landLightFlat.setDiffuseColor(ofFloatColor(3.0, 3.0, 3.0));
+	landLightFlat.setSpecularColor(ofFloatColor(150.0, 175.0, 150.0));
+	landLightFlat.rotate(90, ofVec3f(1.0, 0.0, 0.0));
+	landLightFlat.setPosition(0.0, 0.0, 0.0);
+	landLightCanyon.setup();
+	landLightCanyon.setSpotlight();
+	landLightCanyon.setScale(0.1);
+	landLightCanyon.setSpotlightCutOff(100.0);
+	landLightCanyon.setAttenuation(2.0, 0.001, 0.001);
+	landLightCanyon.setAmbientColor(ofFloatColor(2.5, 2.5, 2.5));
+	landLightCanyon.setDiffuseColor(ofFloatColor(3.0, 3.0, 3.0));
+	landLightCanyon.setSpecularColor(ofFloatColor(175.0, 150.0, 150.0));
+	landLightCanyon.rotate(90, ofVec3f(1.0, 0.0, 0.0));
+	landLightCanyon.setPosition(0.0, 0.0, 0.0);
+	landLightPeaks.setup();
+	landLightPeaks.setSpotlight();
+	landLightPeaks.setScale(0.1);
+	landLightPeaks.setSpotlightCutOff(100.0);
+	landLightPeaks.setAttenuation(2.0, 0.001, 0.001);
+	landLightPeaks.setAmbientColor(ofFloatColor(2.5, 2.5, 2.5));
+	landLightPeaks.setDiffuseColor(ofFloatColor(3.0, 3.0, 3.0));
+	landLightPeaks.setSpecularColor(ofFloatColor(150.0, 150.0, 175.0));
+	landLightPeaks.rotate(90, ofVec3f(1.0, 0.0, 0.0));
+	landLightPeaks.setPosition(0.0, 0.0, 0.0);
+
 	// Load lander model
 	if (lander.loadModel("3DModels/Spacecraft.obj")) {
 		bLanderLoaded = true;
 		lander.setScaleNormalization(false);
-		initPos = glm::vec3(0, 1000, 2500);
+		initPos = glm::vec3(1400, 900, 1200);//testing point = 0, 1000, 2500
 		lander.setPosition(initPos.x, initPos.y, initPos.z);
 		thrustLight.setPosition(lander.getPosition().x, lander.getPosition().y - 2.5, lander.getPosition().z);
 
@@ -110,9 +141,18 @@ void ofApp::setup() {
 	cout << "Number of Verts: " << mars.getMesh(0).getNumVertices() << endl;
 
 	// Landing Area Boxes Coordinates
-	landingBoxes.push_back(Box(Vector3(1180, 500, 1380), Vector3(1220, 650, 1420)));
-	landingBoxes.push_back(Box(Vector3(-1320, 0, 480), Vector3(-1280, 150, 520)));
-	landingBoxes.push_back(Box(Vector3(1180, 3000, -1020), Vector3(1220, 3100, -980)));
+	Box landing1 = Box(Vector3(1180, 500, 1380), Vector3(1220, 650, 1420));
+	Vector3 landing1Center = landing1.center();
+	landingBoxes.push_back(landing1);
+	landLightFlat.setPosition(landing1Center.x(), landing1Center.y() + 75, landing1Center.z());
+	Box landing2 = Box(Vector3(-1320, 0, 480), Vector3(-1280, 150, 520));
+	Vector3 landing2Center = landing2.center();
+	landingBoxes.push_back(landing2);
+	landLightCanyon.setPosition(landing2Center.x(), landing2Center.y() + 75, landing2Center.z());
+	Box landing3 = Box(Vector3(1180, 3000, -1020), Vector3(1220, 3100, -980));
+	Vector3 landing3Center = landing3.center();
+	landingBoxes.push_back(landing3);
+	landLightPeaks.setPosition(landing3Center.x(), landing3Center.y() + 75, landing3Center.z());
 
 	// Pushing in colors for octree
 	levelColors.push_back(ofColor::red);
@@ -537,6 +577,9 @@ void ofApp::draw() {
 	}
 
 	ambientLight.enable();
+	landLightFlat.enable();
+	landLightCanyon.enable();
+	landLightPeaks.enable();
 	if (thrusting == true) {
 		thrustLight.enable();
 	}

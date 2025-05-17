@@ -659,7 +659,8 @@ void ofApp::draw() {
 
 	if (bLanded && !bExploding) {
 		ofSetColor(ofColor::greenYellow);
-		ofDrawBitmapStringHighlight("Successful Landing!", ofGetWidth() / 2 - 100, ofGetHeight() / 2, ofColor::black, ofColor::greenYellow);
+		string gameOverText = "Successful Landing!";
+		ofDrawBitmapStringHighlight(gameOverText, ofGetWidth() / 2 - (gameOverText.length() * 8 / 2), ofGetHeight() / 2, ofColor::black, ofColor::greenYellow);
 		soundLand.play();
 
 		ofSetColor(255);
@@ -673,7 +674,7 @@ void ofApp::draw() {
 
 		currentScore += static_cast<int>(fuelBonus);
 		string scoreText = "Final Score: " + ofToString(currentScore);
-		ofDrawBitmapStringHighlight(scoreText, 20, 40);
+		ofDrawBitmapStringHighlight(scoreText, ofGetWidth() / 2 - (scoreText.length() * 8 / 2), (ofGetHeight() / 2) + 30);
 	}
 
 	else if (bLanded && bExploding) {

@@ -100,6 +100,9 @@ void ofApp::setup() {
 	landLightPeaks.rotate(90, ofVec3f(1.0, 0.0, 0.0));
 	landLightPeaks.setPosition(0.0, 0.0, 0.0);
 
+	soundThrust.load("SFX/Thrust.wav");
+	soundExplosion.load("SFX/Explode.wav");
+	soundLand.load("SFX/Landed.wav");
 	// Load lander model
 	if (lander.loadModel("3DModels/Spacecraft.obj")) {
 		bLanderLoaded = true;
@@ -356,6 +359,7 @@ void ofApp::update() {
 					explosionEmitter.triggerExplosion();
 					explosionStartTime = ofGetElapsedTimef();
 					bExploding = true;
+					soundExplosion.play();
 					cout << "Destorying Lander, Failed Landing\n";
 				}
 			}
@@ -395,6 +399,7 @@ void ofApp::update() {
 					explosionEmitter.triggerExplosion();
 					explosionStartTime = ofGetElapsedTimef();
 					bExploding = true;
+					soundExplosion.play();
 					cout << "Crash! Impact force too high: " << impactForceMag << endl;
 				}
 				else {
@@ -641,6 +646,7 @@ void ofApp::draw() {
 	if (bLanded && !bExploding) {
 		ofSetColor(ofColor::greenYellow);
 		ofDrawBitmapStringHighlight("Successful Landing!", ofGetWidth() / 2 - 100, ofGetHeight() / 2, ofColor::black, ofColor::greenYellow);
+		soundLand.play();
 	}
 
 	else if (bLanded && bExploding) {
@@ -745,6 +751,7 @@ void ofApp::keyPressed(int key) {
 	case 'w':
 		//toggleWireframeMode();
 		if (!bFuelEmpty) {
+			soundThrust.play();
 			thrusting = true;
 		}
 		break;
@@ -835,6 +842,7 @@ void ofApp::keyReleased(int key) {
 	case 'W':
 	case 'w':
 		thrusting = false;
+		soundThrust.stop();
 		break;
 	case OF_KEY_LEFT:
 		moveLeft = false;

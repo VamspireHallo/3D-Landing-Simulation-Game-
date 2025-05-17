@@ -52,13 +52,13 @@
     <ClCompile Include="src\Octree.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\ofApp.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\Util.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\ExplosionEmitter.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ofApp.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

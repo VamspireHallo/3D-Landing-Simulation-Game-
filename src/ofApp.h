@@ -139,4 +139,9 @@ public:
 	glm::vec3 acceleration;
 	glm::vec3 forces;
 	float damping;
+
+	//sounds
+	ofSoundPlayer soundThrust;
+	ofSoundPlayer soundExplosion;
+	ofSoundPlayer soundLand;
 };

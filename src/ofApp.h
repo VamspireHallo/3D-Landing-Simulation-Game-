@@ -24,11 +24,8 @@ public:
 	void mouseEntered(int x, int y);
 	void mouseExited(int x, int y);
 	void windowResized(int w, int h);
-	void dragEvent2(ofDragInfo dragInfo);
-	void dragEvent(ofDragInfo dragInfo);
 	void gotMessage(ofMessage msg);
 	void drawAxis(ofVec3f);
-	void initLightingAndMaterials();
 	void savePicture();
 	void toggleWireframeMode();
 	void togglePointsDisplay();
@@ -122,6 +119,9 @@ public:
 	//Landing Zones
 	vector<Box> landingBoxes;
 	bool bLanded = false;
+	Box landing1;
+	Box landing2;
+	Box landing3;
 
 	//cameras
 	int camType;
@@ -150,4 +150,5 @@ public:
 	std::vector<int> landingAreaBaseScores;
 	int currentScore = 0;
 	bool bShowFinalScore = false;
+	bool hasFinalLand = false;
 };

@@ -43,10 +43,6 @@ void ofApp::setup() {
 
 	backgroundImage.load("BG/Stars.png");
 
-	// setup rudimentary lighting 
-	//
-	//initLightingAndMaterials();
-
 	//lighting setup
 	ambientLight.setup();
 	ambientLight.enable();
@@ -100,6 +96,7 @@ void ofApp::setup() {
 	landLightPeaks.rotate(90, ofVec3f(1.0, 0.0, 0.0));
 	landLightPeaks.setPosition(0.0, 0.0, 0.0);
 
+	//sound setup
 	soundThrust.load("SFX/Thrust.wav");
 	soundExplosion.load("SFX/Explode.wav");
 	soundLand.load("SFX/Landed.wav");
@@ -108,7 +105,7 @@ void ofApp::setup() {
 	if (lander.loadModel("3DModels/Spacecraft.obj")) {
 		bLanderLoaded = true;
 		lander.setScaleNormalization(false);
-		initPos = glm::vec3(0, 2000, 2000);//testing point = 0, 1000, 2500
+		initPos = glm::vec3(0.0, 2000.0, 0.0);//testing point = 0, 1000, 2500
 		lander.setPosition(initPos.x, initPos.y, initPos.z);
 		thrustLight.setPosition(lander.getPosition().x, lander.getPosition().y - 2.5, lander.getPosition().z);
 
@@ -147,22 +144,18 @@ void ofApp::setup() {
 	cout << "Number of Verts: " << mars.getMesh(0).getNumVertices() << endl;
 
 	// Landing Area Boxes Coordinates
-	Box landing1 = Box(Vector3(1180, 500, 1380), Vector3(1220, 650, 1420));
+	landing1 = Box(Vector3(1180, 500, 1380), Vector3(1220, 650, 1420));//flat area
 	Vector3 landing1Center = landing1.center();
 	landingBoxes.push_back(landing1);
 	landLightFlat.setPosition(landing1Center.x(), landing1Center.y() + 75, landing1Center.z());
-	Box landing2 = Box(Vector3(-1320, 0, 480), Vector3(-1280, 150, 520));
+	landing2 = Box(Vector3(-1320, 0, 480), Vector3(-1280, 150, 520));//canyon area
 	Vector3 landing2Center = landing2.center();
 	landingBoxes.push_back(landing2);
 	landLightCanyon.setPosition(landing2Center.x(), landing2Center.y() + 75, landing2Center.z());
-	Box landing3 = Box(Vector3(1180, 3000, -1020), Vector3(1220, 3100, -980));
+	landing3 = Box(Vector3(1180, 3000, -1020), Vector3(1220, 3100, -980));//peaks area
 	Vector3 landing3Center = landing3.center();
 	landingBoxes.push_back(landing3);
 	landLightPeaks.setPosition(landing3Center.x(), landing3Center.y() + 75, landing3Center.z());
-
-	landingAreaBaseScores.push_back(1000); // Flat landing area
-	landingAreaBaseScores.push_back(2000); // Canyon landing area
-	landingAreaBaseScores.push_back(3000); // Peaks landing area
 
 	// Pushing in colors for octree
 	levelColors.push_back(ofColor::red);
@@ -658,21 +651,34 @@ void ofApp::draw() {
 	}
 
 	if (bLanded && !bExploding) {
+		if (hasFinalLand == false) {//run once to calculate score
+			hasFinalLand = true;
+			soundLand.play();
+			// Base Score
+			ofVec3f min = lander.getSceneMin() + lander.getPosition();
+			ofVec3f max = lander.getSceneMax() + lander.getPosition();
+			Box bounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
+			if (landing1.overlap(bounds) == true) {//flat area
+				currentScore = 1000;
+			}
+			else if (landing2.overlap(bounds) == true) {//canyon area
+				currentScore = 2000;
+			}
+			else if (landing3.overlap(bounds) == true) {//peaks area
+				currentScore = 3000;
+			}
+			// Add fuel bonus to score
+			float fuelBonusFactor = 750.0f;
+			float fuelPercent = fuelTimeRemaining / 120.0;
+			float fuelBonus = fuelPercent * fuelBonusFactor;
+
+			currentScore += static_cast<int>(fuelBonus);
+		}
+		
 		ofSetColor(ofColor::greenYellow);
 		string gameOverText = "Successful Landing!";
 		ofDrawBitmapStringHighlight(gameOverText, ofGetWidth() / 2 - (gameOverText.length() * 8 / 2), ofGetHeight() / 2, ofColor::black, ofColor::greenYellow);
-		soundLand.play();
-
 		ofSetColor(255);
-		// Base Score
-		currentScore = 1000;
-
-		// Add fuel bonus to score
-		float fuelBonusFactor = 750.0f;
-		float fuelPercent = fuelTimeRemaining / 120.0;
-		float fuelBonus = fuelPercent * fuelBonusFactor;
-
-		currentScore += static_cast<int>(fuelBonus);
 		string scoreText = "Final Score: " + ofToString(currentScore);
 		ofDrawBitmapStringHighlight(scoreText, ofGetWidth() / 2 - (scoreText.length() * 8 / 2), (ofGetHeight() / 2) + 30);
 	}
@@ -778,7 +784,7 @@ void ofApp::keyPressed(int key) {
 	case 'W':
 	case 'w':
 		//toggleWireframeMode();
-		if (!bFuelEmpty) {
+		if (!bFuelEmpty && (hasFinalLand == false)) {
 			thrusting = true;
 			soundThrust.play();
 		}
@@ -796,11 +802,15 @@ void ofApp::keyPressed(int key) {
 		break;
 	case 'A':
 	case 'a':
-		rotateLeft = true;
+		if (hasFinalLand == false) {
+			rotateLeft = true;
+		}
 		break;
 	case 'D':
 	case 'd':
-		rotateRight = true;
+		if (hasFinalLand == false) {
+			rotateRight = true;
+		}
 		break;
 	case 'E':
 	case 'e':
@@ -820,16 +830,24 @@ void ofApp::keyPressed(int key) {
 		bTelemetryEnabled = !bTelemetryEnabled;
 		break;
 	case OF_KEY_LEFT:
-		moveLeft = true;
+		if (hasFinalLand == false) {
+			moveLeft = true;
+		}
 		break;
 	case OF_KEY_RIGHT:
-		moveRight = true;
+		if (hasFinalLand == false) {
+			moveRight = true;
+		}
 		break;
 	case OF_KEY_UP:
-		moveForward = true;
+		if (hasFinalLand == false) {
+			moveForward = true;
+		}
 		break;
 	case OF_KEY_DOWN:
-		moveBack = true;
+		if (hasFinalLand == false) {
+			moveBack = true;
+		}
 		break;
 	case ' ':
 		// Collision Resolution if at least 10 collisions
@@ -1057,76 +1075,11 @@ void ofApp::gotMessage(ofMessage msg) {
 
 }
 
-
-
-//--------------------------------------------------------------
-// setup basic ambient lighting in GL  (for now, enable just 1 light)
-//
-void ofApp::initLightingAndMaterials() {
-
-	static float ambient[] =
-	{ .5f, .5f, .5, 1.0f };
-	static float diffuse[] =
-	{ 1.0f, 1.0f, 1.0f, 1.0f };
-
-	static float position[] =
-	{ 5.0, 5.0, 5.0, 0.0 };
-
-	static float lmodel_ambient[] =
-	{ 1.0f, 1.0f, 1.0f, 1.0f };
-
-	static float lmodel_twoside[] =
-	{ GL_TRUE };
-
-
-	glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
-	glLightfv(GL_LIGHT0, GL_POSITION, position);
-
-	glLightfv(GL_LIGHT1, GL_AMBIENT, ambient);
-	glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuse);
-	glLightfv(GL_LIGHT1, GL_POSITION, position);
-
-
-	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
-	glLightModelfv(GL_LIGHT_MODEL_TWO_SIDE, lmodel_twoside);
-
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
-	//	glEnable(GL_LIGHT1);
-	glShadeModel(GL_SMOOTH);
-}
-
 void ofApp::savePicture() {
 	ofImage picture;
 	picture.grabScreen(0, 0, ofGetWidth(), ofGetHeight());
 	picture.save("screenshot.png");
 	cout << "picture saved" << endl;
-}
-
-//--------------------------------------------------------------
-//
-// support drag-and-drop of model (.obj) file loading.  when
-// model is dropped in viewport, place origin under cursor
-//
-void ofApp::dragEvent2(ofDragInfo dragInfo) {
-
-	ofVec3f point;
-	mouseIntersectPlane(ofVec3f(0, 0, 0), cam.getZAxis(), point);
-	if (lander.loadModel(dragInfo.files[0])) {
-		lander.setScaleNormalization(false);
-		//		lander.setScale(.1, .1, .1);
-			//	lander.setPosition(point.x, point.y, point.z);
-		lander.setPosition(1, 1, 0);
-
-		bLanderLoaded = true;
-		for (int i = 0; i < lander.getMeshCount(); i++) {
-			bboxList.push_back(Octree::meshBounds(lander.getMesh(i)));
-		}
-
-		cout << "Mesh Count: " << lander.getMeshCount() << endl;
-	}
-	else cout << "Error: Can't load model" << dragInfo.files[0] << endl;
 }
 
 bool ofApp::mouseIntersectPlane(ofVec3f planePoint, ofVec3f planeNorm, ofVec3f& point) {
@@ -1135,65 +1088,6 @@ bool ofApp::mouseIntersectPlane(ofVec3f planePoint, ofVec3f planeNorm, ofVec3f& 
 	ofVec3f rayDir = rayPoint - cam.getPosition();
 	rayDir.normalize();
 	return (rayIntersectPlane(rayPoint, rayDir, planePoint, planeNorm, point));
-}
-
-//--------------------------------------------------------------
-//
-// support drag-and-drop of model (.obj) file loading.  when
-// model is dropped in viewport, place origin under cursor
-//
-void ofApp::dragEvent(ofDragInfo dragInfo) {
-	if (lander.loadModel(dragInfo.files[0])) {
-		bLanderLoaded = true;
-		lander.setScaleNormalization(false);
-		lander.setPosition(0, 0, 0);
-		cout << "number of meshes: " << lander.getNumMeshes() << endl;
-		bboxList.clear();
-		for (int i = 0; i < lander.getMeshCount(); i++) {
-			bboxList.push_back(Octree::meshBounds(lander.getMesh(i)));
-		}
-
-		//		lander.setRotation(1, 180, 1, 0, 0);
-
-				// We want to drag and drop a 3D object in space so that the model appears 
-				// under the mouse pointer where you drop it !
-				//
-				// Our strategy: intersect a plane parallel to the camera plane where the mouse drops the model
-				// once we find the point of intersection, we can position the lander/lander
-				// at that location.
-				//
-
-				// Setup our rays
-				//
-		glm::vec3 origin = cam.getPosition();
-		glm::vec3 camAxis = cam.getZAxis();
-		glm::vec3 mouseWorld = cam.screenToWorld(glm::vec3(mouseX, mouseY, 0));
-		glm::vec3 mouseDir = glm::normalize(mouseWorld - origin);
-		float distance;
-
-		bool hit = glm::intersectRayPlane(origin, mouseDir, glm::vec3(0, 0, 0), camAxis, distance);
-		if (hit) {
-			// find the point of intersection on the plane using the distance 
-			// We use the parameteric line or vector representation of a line to compute
-			//
-			// p' = p + s * dir;
-			//
-			glm::vec3 intersectPoint = origin + distance * mouseDir;
-
-			// Now position the lander's origin at that intersection point
-			//
-			glm::vec3 min = lander.getSceneMin();
-			glm::vec3 max = lander.getSceneMax();
-			float offset = (max.y - min.y) / 2.0;
-			lander.setPosition(intersectPoint.x, intersectPoint.y - offset, intersectPoint.z);
-
-			// set up bounding box for lander while we are at it
-			//
-			landerBounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
-		}
-	}
-
-
 }
 
 //  intersect the mouse ray with the plane normal to the camera 
@@ -1236,7 +1130,7 @@ void ofApp::restartLander() {
 	// Reset control flags
 	thrusting = false;
 	moveLeft = moveRight = moveForward = moveBack = rotateLeft = rotateRight = false;
-	float fuelTimeRemaining = 120.0f;  // 2 minutes = 120 seconds
+	fuelTimeRemaining = 120.0f;  // 2 minutes = 120 seconds
 
 	// Reset explosion state
 	bExploding = false;

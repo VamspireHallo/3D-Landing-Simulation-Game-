@@ -81,8 +81,7 @@ public:
 	glm::vec3 collisionNormal;
 	float backupSpeed = 5.0;
 
-	ofxToggle timingToggle;
-	bool bTimingInfo = false;
+	ofxToggle aglToggle;
 
 	ofImage backgroundImage;
 

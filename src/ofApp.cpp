@@ -104,7 +104,7 @@ void ofApp::setup() {
 	if (lander.loadModel("3DModels/Spacecraft.obj")) {
 		bLanderLoaded = true;
 		lander.setScaleNormalization(false);
-		initPos = glm::vec3(1400, 900, 1200);//testing point = 0, 1000, 2500
+		initPos = glm::vec3(0, 2000, 2000);//testing point = 0, 1000, 2500
 		lander.setPosition(initPos.x, initPos.y, initPos.z);
 		thrustLight.setPosition(lander.getPosition().x, lander.getPosition().y - 2.5, lander.getPosition().z);
 
@@ -191,46 +191,62 @@ void ofApp::setup() {
 	bFuelEmpty = false;
 	explosionDuration = 3.0f;
 
-	gui.setup();
 	gui.add(numLevels.setup("Number of Levels", 1, 1, 10));
-	gui.add(timingToggle.setup("Timing Info", false));
+	gui.add(aglToggle.setup("Show AGL", true));
 }
 
 //--------------------------------------------------------------
 // incrementally update scene (animation)
 //
 void ofApp::update() {
-	bTimingInfo = timingToggle;
-
 	if (!bLanderLoaded) return;
 
-	//camera settings
+	// Common setup
+	glm::mat4 landerMatrix = lander.getModelMatrix();
+	glm::vec3 landerPos = lander.getPosition();
+
+	// Local direction vectors
+	glm::vec3 localForward = glm::vec3(0, 0, -1);
+	glm::vec3 localBack = glm::vec3(0, 0, 1);
+	glm::vec3 localUp = glm::vec3(0, 1, 0);
+
+	// Transformed world directions
+	glm::vec3 worldForward = glm::normalize(glm::vec3(landerMatrix * glm::vec4(localForward, 0.0)));
+	glm::vec3 worldBack = glm::normalize(glm::vec3(landerMatrix * glm::vec4(localBack, 0.0)));
+	glm::vec3 worldUp = glm::normalize(glm::vec3(landerMatrix * glm::vec4(localUp, 0.0)));
+	
+	// Camera Settings
 	switch (camType) {
-	case 0://default camera; moves with lander at distance (F1)
-		cam.setPosition(lander.getPosition());
-		cam.setTarget(lander.getPosition());
+	case 0: { // Default chase camera (F1)
+		cam.setPosition(landerPos);
+		cam.setTarget(landerPos);
 		cam.setDistance(125.0);
 		break;
-	case 1://tracking camera; tracks lander movement from radius (F2)
-		cam.setPosition(trackingPos);
-		cam.setTarget(lander.getPosition());
-		cam.setDistance(0.0);
+	}
+	case 1: { // Tracking camera (F2)
+		glm::vec3 camOffset = 50.0f * worldBack + 40.0f * worldUp;
+		cam.setPosition(landerPos + camOffset);
+		cam.lookAt(landerPos);
 		break;
-	case 2://internal camera (F3)
-		cam.setPosition(lander.getPosition() + glm::vec4(0, 0, -10, 0));
-		cam.setTarget(lander.getPosition());
-		cam.setDistance(0.0);
+	}
+	case 2: { // Internal cockpit camera (F3)
+		glm::vec3 camOffset = 10.0f * worldForward;
+		glm::vec3 camPos = landerPos + camOffset;
+		glm::vec3 lookAtPos = landerPos + worldForward * 20.0f;
+		cam.setPosition(camPos);
+		cam.lookAt(lookAtPos);
 		break;
-	case 3://top down camera (F4)
-		cam.setPosition(lander.getPosition().x, lander.getPosition().y + 125.0, lander.getPosition().z);
-		cam.setTarget(lander.getPosition());
-		cam.setDistance(0.0);
+	}
+	case 3: { // Top-down camera (F4)
+		cam.setPosition(landerPos + glm::vec3(0, 125.0, 0));
+		cam.lookAt(landerPos);
 		break;
-	default://other cases; camera faces terrain from far distance
-		cam.setTarget(glm::vec3(0.0, 0.0, 0.0));
-		cam.setPosition(glm::vec3(0.0, 0.0, 0.0));
-		cam.setDistance(1000.0);
+	}
+	default: { // Distant static terrain view
+		cam.setPosition(glm::vec3(0.0, 500.0, 500.0));
+		cam.lookAt(glm::vec3(0.0));
 		break;
+	}
 	}
 
 	float dt = ofGetLastFrameTime();
@@ -402,8 +418,9 @@ void ofApp::update() {
 		}
 	}
 
+	bTelemetryEnabled = aglToggle;
 
-	if (bShowAltitude) {
+	if (bTelemetryEnabled) {
 		// Cast ray straight down from lander
 		glm::vec3 landerPos = lander.getPosition();
 		glm::vec3 rayDir = glm::vec3(0, -1, 0); // Downward direction
@@ -437,10 +454,6 @@ void ofApp::draw() {
 	ofDisableDepthTest();
 	backgroundImage.draw(0, 0, ofGetWidth(), ofGetHeight());
 	ofEnableDepthTest();
-
-	glDepthMask(false);
-	if (!bHide) gui.draw();
-	glDepthMask(true);
 
 	cam.begin();
 	ofPushMatrix();
@@ -597,6 +610,10 @@ void ofApp::draw() {
 	ofPopMatrix();
 	cam.end();
 
+	glDepthMask(false);
+	if (!bHide) gui.draw();
+	glDepthMask(true);
+
 	ofSetColor(255);
 	std::stringstream ss;
 	ss << "Fuel Time Remaining: " << std::fixed << std::setprecision(1) << fuelTimeRemaining << " s";
@@ -614,7 +631,7 @@ void ofApp::draw() {
 	int vx = ofGetWidth() - velocityWidth - 20;
 	ofDrawBitmapString(velocityText, vx, 50);
 
-	if (bShowAltitude) {
+	if (bTelemetryEnabled) {
 		string aglText = "Altitude AGL Sensor: " + ofToString(altitudeAGL, 2) + " m";
 		int textWidth = aglText.length() * 8;
 		int x = ofGetWidth() - textWidth - 20;
@@ -897,9 +914,9 @@ void ofApp::mousePressed(int x, int y, int button) {
 		float startTime = ofGetElapsedTimef() * 1000.0f;
 		bool pointFound = raySelectWithOctree(p);
 		float endTime = ofGetElapsedTimef() * 1000.0f;
-		if (bTimingInfo) {
-			cout << "Ray Intersection Search Time: " << (endTime - startTime) << " ms" << endl;
-		}
+		//if (bTimingInfo) {
+		//	cout << "Ray Intersection Search Time: " << (endTime - startTime) << " ms" << endl;
+		//}
 	}
 }
 

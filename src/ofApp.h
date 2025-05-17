@@ -96,6 +96,7 @@ public:
 	float gravity;
 	bool bShowAltitude = true;
 	glm::vec3 initPos;
+	bool bPlayerMoved = false;
 
 	// Spacecraft thruster
 	ParticleSystem* thrusterEmitter = NULL;
@@ -144,4 +145,9 @@ public:
 	ofSoundPlayer soundThrust;
 	ofSoundPlayer soundExplosion;
 	ofSoundPlayer soundLand;
+
+	// Scoring
+	std::vector<int> landingAreaBaseScores;
+	int currentScore = 0;
+	bool bShowFinalScore = false;
 };

@@ -103,6 +103,7 @@ void ofApp::setup() {
 	soundThrust.load("SFX/Thrust.wav");
 	soundExplosion.load("SFX/Explode.wav");
 	soundLand.load("SFX/Landed.wav");
+
 	// Load lander model
 	if (lander.loadModel("3DModels/Spacecraft.obj")) {
 		bLanderLoaded = true;
@@ -159,6 +160,10 @@ void ofApp::setup() {
 	landingBoxes.push_back(landing3);
 	landLightPeaks.setPosition(landing3Center.x(), landing3Center.y() + 75, landing3Center.z());
 
+	landingAreaBaseScores.push_back(1000); // Flat landing area
+	landingAreaBaseScores.push_back(2000); // Canyon landing area
+	landingAreaBaseScores.push_back(3000); // Peaks landing area
+
 	// Pushing in colors for octree
 	levelColors.push_back(ofColor::red);
 	levelColors.push_back(ofColor::orange);
@@ -178,6 +183,7 @@ void ofApp::setup() {
 
 	// Setting Moon gravity
 	gravity = -0.165f;
+	bGravityEnabled = false;
 
 	//forces setup
 	velocity = glm::vec3(0.0000001, 0.0000001, 0.0000001);
@@ -202,7 +208,8 @@ void ofApp::setup() {
 // incrementally update scene (animation)
 //
 void ofApp::update() {
-	if (!bLanderLoaded) return;
+	// Play game once gravity is enabled
+	if (!bLanderLoaded || !bGravityEnabled) return;
 
 	// Common setup
 	glm::mat4 landerMatrix = lander.getModelMatrix();
@@ -619,6 +626,13 @@ void ofApp::draw() {
 	if (!bHide) gui.draw();
 	glDepthMask(true);
 
+	if (!bGravityEnabled) {
+		ofSetColor(ofColor::white);
+		std::string startMsg = "Press G to Start the Game";
+		int msgWidth = startMsg.length() * 8;
+		ofDrawBitmapStringHighlight(startMsg, (ofGetWidth() - msgWidth) / 2, 40, ofColor::black, ofColor::white);
+	}
+
 	ofSetColor(255);
 	std::stringstream ss;
 	ss << "Fuel Time Remaining: " << std::fixed << std::setprecision(1) << fuelTimeRemaining << " s";
@@ -647,6 +661,19 @@ void ofApp::draw() {
 		ofSetColor(ofColor::greenYellow);
 		ofDrawBitmapStringHighlight("Successful Landing!", ofGetWidth() / 2 - 100, ofGetHeight() / 2, ofColor::black, ofColor::greenYellow);
 		soundLand.play();
+
+		ofSetColor(255);
+		// Base Score
+		currentScore = 1000;
+
+		// Add fuel bonus to score
+		float fuelBonusFactor = 750.0f;
+		float fuelPercent = fuelTimeRemaining / 120.0;
+		float fuelBonus = fuelPercent * fuelBonusFactor;
+
+		currentScore += static_cast<int>(fuelBonus);
+		string scoreText = "Final Score: " + ofToString(currentScore);
+		ofDrawBitmapStringHighlight(scoreText, 20, 40);
 	}
 
 	else if (bLanded && bExploding) {
@@ -751,8 +778,8 @@ void ofApp::keyPressed(int key) {
 	case 'w':
 		//toggleWireframeMode();
 		if (!bFuelEmpty) {
-			soundThrust.play();
 			thrusting = true;
+			soundThrust.play();
 		}
 		break;
 	case OF_KEY_ALT:
@@ -785,7 +812,7 @@ void ofApp::keyPressed(int key) {
 		break;
 	case 'G':
 	case 'g':
-		bGravityEnabled = !bGravityEnabled;
+		bGravityEnabled = true;
 		break;
 	case 'Z':
 	case 'z':

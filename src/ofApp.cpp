@@ -217,36 +217,36 @@ void ofApp::update() {
 	
 	// Camera Settings
 	switch (camType) {
-	case 0: { // Default chase camera (F1)
-		cam.setPosition(landerPos);
-		cam.setTarget(landerPos);
-		cam.setDistance(125.0);
-		break;
-	}
-	case 1: { // Tracking camera (F2)
-		glm::vec3 camOffset = 50.0f * worldBack + 40.0f * worldUp;
-		cam.setPosition(landerPos + camOffset);
-		cam.lookAt(landerPos);
-		break;
-	}
-	case 2: { // Internal cockpit camera (F3)
-		glm::vec3 camOffset = 10.0f * worldForward;
-		glm::vec3 camPos = landerPos + camOffset;
-		glm::vec3 lookAtPos = landerPos + worldForward * 20.0f;
-		cam.setPosition(camPos);
-		cam.lookAt(lookAtPos);
-		break;
-	}
-	case 3: { // Top-down camera (F4)
-		cam.setPosition(landerPos + glm::vec3(0, 125.0, 0));
-		cam.lookAt(landerPos);
-		break;
-	}
-	default: { // Distant static terrain view
-		cam.setPosition(glm::vec3(0.0, 500.0, 500.0));
-		cam.lookAt(glm::vec3(0.0));
-		break;
-	}
+		case 0: { // Default chase camera (F1)
+			cam.setPosition(landerPos);
+			cam.setTarget(landerPos);
+			cam.setDistance(125.0);
+			break;
+		}
+		case 1: { // Tracking camera (F2)
+			glm::vec3 camOffset = 50.0f * worldBack + 40.0f * worldUp;
+			cam.setPosition(landerPos + camOffset);
+			cam.lookAt(landerPos);
+			break;
+		}
+		case 2: { // Internal cockpit camera (F3)
+			glm::vec3 camOffset = 10.0f * worldForward;
+			glm::vec3 camPos = landerPos + camOffset;
+			glm::vec3 lookAtPos = landerPos + worldForward * 20.0f;
+			cam.setPosition(camPos);
+			cam.lookAt(lookAtPos);
+			break;
+		}
+		case 3: { // Top-down camera (F4)
+			cam.setPosition(landerPos + glm::vec3(0, 125.0, 0));
+			cam.lookAt(landerPos);
+			break;
+		}
+		default: { // Distant static terrain view
+			cam.setPosition(glm::vec3(0.0, 500.0, 500.0));
+			cam.lookAt(glm::vec3(0.0));
+			break;
+		}
 	}
 
 	float dt = ofGetLastFrameTime();

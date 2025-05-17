@@ -621,9 +621,9 @@ void ofApp::draw() {
 
 	if (!bGravityEnabled) {
 		ofSetColor(ofColor::white);
-		std::string startMsg = "Press G to Start the Game";
-		int msgWidth = startMsg.length() * 8;
-		ofDrawBitmapStringHighlight(startMsg, (ofGetWidth() - msgWidth) / 2, 40, ofColor::black, ofColor::white);
+		std::string startMsg = "Press G to Start the Game\nUse W to propel upward with the thruster\nUse A/D to rotate the lander\nUse the arrow keys to move the lander\nF1/F2/F3/F4 toggles between cameras";
+		int msgWidth = startMsg.length() * 4;
+		ofDrawBitmapStringHighlight(startMsg, (ofGetWidth() - msgWidth) / 2,(ofGetWindowHeight() / 2.0), ofColor::black, ofColor::white);
 	}
 
 	ofSetColor(255);
@@ -823,7 +823,9 @@ void ofApp::keyPressed(int key) {
 		break;
 	case 'G':
 	case 'g':
-		bGravityEnabled = true;
+		if (bGravityEnabled == false) {
+			bGravityEnabled = true;
+		}
 		break;
 	case 'Z':
 	case 'z':

@@ -34,7 +34,7 @@ public:
         ofMesh mesh;
         mesh.setMode(OF_PRIMITIVE_POINTS);
         mesh.addVertex(pos);
-        mesh.addNormal(glm::vec3(scale.x, 0, 0));  // Point size in normal.x
+        mesh.addNormal(glm::vec3(scale.x * 5, 0, 0));  // Point size in normal.x
         mesh.addColor(ofFloatColor(color, alpha / 255.0f));  // Pass alpha as float
 
         mesh.draw();
@@ -108,7 +108,7 @@ public:
     ParticleSystem() : isEmitting(true) {
         ofDisableArbTex(); // Needed for GL point sprites (use normalized tex coords)
 
-        if (!particleImage.load("images/flare.png")) {
+        if (!particleImage.load("shaders/dot.png")) {
             ofLogError("ParticleSystem") << "Failed to load particle image";
         }
         else {
@@ -138,13 +138,11 @@ public:
     }
 
     void draw() {
-        if (shaderLoaded && particleTexture != nullptr) {
-            for (auto& ring : particles) {
+        for (auto& ring : particles) {
+            if (shaderLoaded && particleTexture != nullptr && ring.altMode) {
                 ring.drawWithShader(shader, *particleTexture);
             }
-        }
-        else {
-            for (auto& ring : particles) {
+            else {
                 ring.draw();
             }
         }

@@ -48,7 +48,7 @@ void ExplosionEmitter::triggerExplosion() {
     particleSystem->startEmitting();  // Start emitting particles
 
     // Emit particles for a more realistic explosion
-    for (int i = 0; i < 500; i++) {  // Emit a burst of particles
+    for (int i = 0; i < 700; i++) {  // Emit a burst of particles
         glm::vec3 direction = particleSystem->randomUnitVector();  // Random direction for explosion particles
         particleSystem->emit(position, direction, ofRandom(0.5f, 4.0f), ofColor::cyan, true);  // Emit particles with some randomness
     }
